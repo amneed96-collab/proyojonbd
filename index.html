@@ -171,6 +171,16 @@
   .qty-stepper button{ background:none; border:none; width:24px; height:24px; font-size:1.1rem; font-weight:700; color:var(--teal-deep); }
   .qty-stepper span{ font-family:var(--font-mono); font-weight:700; min-width:20px; text-align:center; }
 
+  .area-options{ display:grid; gap:8px; }
+  .area-option{
+    display:flex; align-items:center; gap:10px;
+    border:1px solid var(--hairline); border-radius:8px;
+    padding:10px 12px; font-size:0.9rem; cursor:pointer;
+    background:var(--bg);
+  }
+  .area-option:has(input:checked){ border-color:var(--teal); background:var(--mint); }
+  .area-option input{ width:auto; margin:0; accent-color:var(--teal); }
+
   .field-error{ color:var(--danger); font-size:0.78rem; margin-top:4px; display:none; }
   .field.invalid input, .field.invalid textarea{ border-color:var(--danger); }
   .field.invalid .field-error{ display:block; }
@@ -397,6 +407,20 @@
       </div>
     </div>
 
+    <div class="field" id="areaField">
+      <label>ডেলিভারি এলাকা</label>
+      <div class="area-options">
+        <label class="area-option">
+          <input type="radio" name="deliveryArea" value="Inside Feni" checked>
+          <span>ফেনীর ভেতরে — ৬০ টাকা</span>
+        </label>
+        <label class="area-option">
+          <input type="radio" name="deliveryArea" value="Outside Feni">
+          <span>ফেনীর বাইরে — ১৫০ টাকা</span>
+        </label>
+      </div>
+    </div>
+
     <div class="field" id="nameField">
       <label for="custName">আপনার নাম</label>
       <input type="text" id="custName" placeholder="যেমন: রহিম উদ্দিন">
@@ -449,7 +473,7 @@
    কনফিগারেশন
    ========================================================= */
 const API_URL = "https://script.google.com/macros/s/AKfycbzhR_FwZNlFls6uB0a5FsnVt3yW5_Wt0Q2T8zzkPCLqjBWB0Y4K7QVAjcTYaX8DWvGO/exec"; // আপনার Apps Script Web App URL এখানে বসান
-const DELIVERY_CHARGE = 60; // টাকা — প্রয়োজনে বদলে নিন
+const DELIVERY_CHARGES = { "Inside Feni": 60, "Outside Feni": 150 }; // টাকা — প্রয়োজনে বদলে নিন
 const ADMIN_PIN = "1234"; // ⚠️ এটা বদলে নিন। এটা real security না, শুধু সাধারণ visitor আটকানোর জন্য।
 
 const SAMPLE_PRODUCTS = [
@@ -602,6 +626,7 @@ function openBuyModal(id){
   currentProduct = PRODUCTS.find(p=>String(p.id)===String(id));
   if (!currentProduct) return;
   currentQty = 1;
+  document.querySelector('input[name="deliveryArea"][value="Inside Feni"]').checked = true;
 
   document.getElementById('modalProductPreview').innerHTML = `
     <div class="modal-product-thumb">${currentProduct.image ? `<img src="${currentProduct.image}" alt="${currentProduct.name}">` : ''}</div>
@@ -613,13 +638,23 @@ function openBuyModal(id){
   buyModalScrim.classList.add('open');
 }
 
+function getSelectedDeliveryArea(){
+  const checked = document.querySelector('input[name="deliveryArea"]:checked');
+  return checked ? checked.value : 'Inside Feni';
+}
+
 function updateModalTotal(){
   document.getElementById('qtyValue').textContent = currentQty;
   const subtotal = currentProduct.price * currentQty;
+  const deliveryCharge = DELIVERY_CHARGES[getSelectedDeliveryArea()];
   document.getElementById('modalSubtotal').textContent = money(subtotal);
-  document.getElementById('modalDelivery').textContent = money(DELIVERY_CHARGE);
-  document.getElementById('modalTotal').textContent = money(subtotal + DELIVERY_CHARGE);
+  document.getElementById('modalDelivery').textContent = money(deliveryCharge);
+  document.getElementById('modalTotal').textContent = money(subtotal + deliveryCharge);
 }
+
+document.querySelectorAll('input[name="deliveryArea"]').forEach(radio=>{
+  radio.addEventListener('change', updateModalTotal);
+});
 
 document.getElementById('qtyIncBtn').addEventListener('click', ()=>{ currentQty++; updateModalTotal(); });
 document.getElementById('qtyDecBtn').addEventListener('click', ()=>{ if (currentQty>1){ currentQty--; updateModalTotal(); } });
@@ -643,14 +678,16 @@ document.getElementById('confirmBuyBtn').addEventListener('click', async ()=>{
   if (!nameOk || !phoneOk || !addressOk) return;
 
   const subtotal = currentProduct.price * currentQty;
-  const total = subtotal + DELIVERY_CHARGE;
+  const deliveryArea = getSelectedDeliveryArea();
+  const deliveryCharge = DELIVERY_CHARGES[deliveryArea];
+  const total = subtotal + deliveryCharge;
 
   const order = {
     customerName:name, phone, address,
     productName: currentProduct.name,
     quantity: currentQty,
     unitPrice: currentProduct.price,
-    subtotal, deliveryCharge: DELIVERY_CHARGE, total
+    subtotal, deliveryArea, deliveryCharge, total
   };
 
   const btn = document.getElementById('confirmBuyBtn');
@@ -706,6 +743,7 @@ document.getElementById('confirmPrintBtn').addEventListener('click', ()=>{
       <div class="row"><span>মোবাইল</span><span>${order.phone}</span></div>
       <hr>
       <div class="row"><span>${order.productName} x${order.quantity}</span><span>${order.subtotal} টাকা</span></div>
+      <div class="row"><span>ডেলিভারি এলাকা</span><span>${order.deliveryArea === 'Outside Feni' ? 'ফেনীর বাইরে' : 'ফেনীর ভেতরে'}</span></div>
       <div class="row"><span>ডেলিভারি চার্জ</span><span>${order.deliveryCharge} টাকা</span></div>
       <hr>
       <div class="row total"><span>সর্বমোট</span><span>${order.total} টাকা</span></div>
@@ -971,7 +1009,7 @@ function renderOrdersTable(){
 
   wrap.innerHTML = `
     <table class="data-table">
-      <thead><tr><th>অর্ডার আইডি</th><th>তারিখ</th><th>কাস্টমার</th><th>মোবাইল</th><th>পণ্য</th><th>পরিমাণ</th><th>সাবটোটাল</th><th>ডেলিভারি চার্জ</th><th>মোট</th><th>স্ট্যাটাস</th></tr></thead>
+      <thead><tr><th>অর্ডার আইডি</th><th>তারিখ</th><th>কাস্টমার</th><th>মোবাইল</th><th>পণ্য</th><th>পরিমাণ</th><th>ডেলিভারি এলাকা</th><th>ঠিকানা</th><th>সাবটোটাল</th><th>ডেলিভারি চার্জ</th><th>মোট</th><th>স্ট্যাটাস</th></tr></thead>
       <tbody>
         ${_currentOrdersList.map(o=>`
           <tr>
@@ -981,6 +1019,8 @@ function renderOrdersTable(){
             <td>${o.phone||''}</td>
             <td>${o.productName||''}</td>
             <td>${o.quantity||''}</td>
+            <td>${o.deliveryArea === 'Outside Feni' ? 'ফেনীর বাইরে' : 'ফেনীর ভেতরে'}</td>
+            <td>${o.address||''}</td>
             <td>${money(o.subtotal)}</td>
             <td>${money(o.deliveryCharge)}</td>
             <td>${money(o.total)}</td>
@@ -992,8 +1032,8 @@ function renderOrdersTable(){
 
 document.getElementById('ordersPrintBtn').addEventListener('click', ()=>{
   printTableWindow('অর্ডার রিপোর্ট — ' + currentReportStatus,
-    '<tr><th>অর্ডার আইডি</th><th>তারিখ</th><th>কাস্টমার</th><th>মোবাইল</th><th>পণ্য</th><th>পরিমাণ</th><th>মোট</th><th>স্ট্যাটাস</th></tr>',
-    _currentOrdersList.map(o=>`<tr><td>${o.orderId||''}</td><td>${o.timestamp?new Date(o.timestamp).toLocaleDateString('bn-BD'):''}</td><td>${o.customerName||''}</td><td>${o.phone||''}</td><td>${o.productName||''}</td><td>${o.quantity||''}</td><td>${o.total||0} টাকা</td><td>${o.status||''}</td></tr>`).join('')
+    '<tr><th>অর্ডার আইডি</th><th>তারিখ</th><th>কাস্টমার</th><th>মোবাইল</th><th>পণ্য</th><th>পরিমাণ</th><th>ডেলিভারি এলাকা</th><th>ঠিকানা</th><th>মোট</th><th>স্ট্যাটাস</th></tr>',
+    _currentOrdersList.map(o=>`<tr><td>${o.orderId||''}</td><td>${o.timestamp?new Date(o.timestamp).toLocaleDateString('bn-BD'):''}</td><td>${o.customerName||''}</td><td>${o.phone||''}</td><td>${o.productName||''}</td><td>${o.quantity||''}</td><td>${o.deliveryArea==='Outside Feni'?'ফেনীর বাইরে':'ফেনীর ভেতরে'}</td><td>${o.address||''}</td><td>${o.total||0} টাকা</td><td>${o.status||''}</td></tr>`).join('')
   );
 });
 
