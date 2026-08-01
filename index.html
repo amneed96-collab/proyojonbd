@@ -71,6 +71,33 @@
   .product-thumb{ width:100%; aspect-ratio:4/3; background:var(--mint); overflow:hidden; display:flex; align-items:center; justify-content:center; }
   .product-thumb img{ width:100%; height:100%; object-fit:cover; }
   .product-thumb .placeholder{ font-size:0.78rem; color:var(--teal-deep); }
+  .img-upload-boxes{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .img-upload-box{
+    position:relative; aspect-ratio:1/1;
+    border:2px dashed var(--hairline); border-radius:10px;
+    background:var(--bg); cursor:pointer; overflow:hidden;
+    transition:border-color 0.15s ease;
+  }
+  .img-upload-box:hover{ border-color:var(--teal); }
+  .img-upload-box.has-img{ border-style:solid; border-color:var(--teal); }
+  .img-box-inner{
+    width:100%; height:100%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:6px; color:var(--ink-soft); font-size:0.8rem;
+  }
+  .img-box-inner img{ width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
+  .img-remove-btn{
+    position:absolute; top:4px; right:4px; z-index:2;
+    background:rgba(0,0,0,0.55); color:#fff; border:none;
+    border-radius:50%; width:22px; height:22px; font-size:0.75rem;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    line-height:1;
+  }
+  .img-remove-btn:hover{ background:var(--danger); }
+  .img-slider img{ width:100%; height:100%; object-fit:cover; }
+  .slider-dots{ position:absolute; bottom:6px; left:50%; transform:translateX(-50%); display:flex; gap:5px; }
+  .dot{ width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,0.6); cursor:pointer; border:1px solid rgba(0,0,0,0.15); }
+  .dot.active{ background:var(--white); }
   .product-body{ padding:13px 14px 15px; display:flex; flex-direction:column; gap:5px; flex:1; }
   .product-name{ font-weight:700; font-size:1rem; line-height:1.35; }
   .product-desc{ font-size:0.84rem; color:var(--ink-soft); line-height:1.4; flex:1; }
@@ -208,7 +235,27 @@
   .toast{ position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--teal-deep); color:var(--white); padding:11px 18px; border-radius:8px; font-size:0.88rem; font-weight:600; opacity:0; visibility:hidden; transition:opacity 0.2s ease, transform 0.2s ease; z-index:80; max-width:90vw; text-align:center; }
   .toast.show{ opacity:1; visibility:visible; transform:translateX(-50%) translateY(0); }
 
-  .footer{ text-align:center; padding:18px; color:var(--ink-soft); font-size:0.8rem; border-top:1px solid var(--hairline); }
+  .footer{
+    background:var(--forest); color:var(--white);
+    padding:28px 20px 18px; text-align:center;
+    border-top:3px solid var(--mint);
+  }
+  .footer-brand{ font-family:var(--font-display); font-weight:700; font-size:1.1rem; margin-bottom:6px; }
+  .social-links{ display:flex; justify-content:center; gap:14px; margin:14px 0; }
+  .social-link{
+    display:flex; align-items:center; gap:7px;
+    background:rgba(255,255,255,0.12); color:var(--white);
+    border:1px solid rgba(255,255,255,0.2);
+    border-radius:8px; padding:8px 16px; font-size:0.88rem; font-weight:600;
+    text-decoration:none;
+  }
+  .social-link:hover{ background:rgba(255,255,255,0.22); }
+  .footer-credit{
+    font-size:0.78rem; color:rgba(255,255,255,0.7);
+    margin-top:14px; padding-top:12px;
+    border-top:1px solid rgba(255,255,255,0.15);
+  }
+  .footer-credit strong{ color:var(--white); }
 </style>
 </head>
 <body>
@@ -323,7 +370,37 @@
             <div class="field"><label>দাম (টাকা)</label><input type="number" id="pfPrice" min="0"></div>
             <div class="field"><label>স্টক</label><input type="number" id="pfStock" min="0"></div>
             <div class="field full"><label>সংক্ষিপ্ত বিবরণ</label><textarea id="pfDesc" rows="2"></textarea></div>
-            <div class="field full"><label>ছবির লিংক (URL)</label><input type="text" id="pfImage" placeholder="https://..."></div>
+            <div class="field full">
+              <label>পণ্যের ছবি (সর্বোচ্চ ৩টি) — বক্সে ক্লিক করে ছবি সিলেক্ট করুন</label>
+              <div class="img-upload-boxes" id="imgUploadBoxes">
+                <div class="img-upload-box" data-slot="0">
+                  <input type="file" accept="image/*" class="img-file-input" style="display:none">
+                  <div class="img-box-inner">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 15l5-5 4 4 3-3 6 6"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>
+                    <span>ছবি ১</span>
+                  </div>
+                  <button class="img-remove-btn" style="display:none" type="button">✕</button>
+                </div>
+                <div class="img-upload-box" data-slot="1">
+                  <input type="file" accept="image/*" class="img-file-input" style="display:none">
+                  <div class="img-box-inner">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 15l5-5 4 4 3-3 6 6"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>
+                    <span>ছবি ২</span>
+                  </div>
+                  <button class="img-remove-btn" style="display:none" type="button">✕</button>
+                </div>
+                <div class="img-upload-box" data-slot="2">
+                  <input type="file" accept="image/*" class="img-file-input" style="display:none">
+                  <div class="img-box-inner">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 15l5-5 4 4 3-3 6 6"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>
+                    <span>ছবি ৩</span>
+                  </div>
+                  <button class="img-remove-btn" style="display:none" type="button">✕</button>
+                </div>
+              </div>
+              <div id="pfImageStatus" style="font-size:0.8rem;margin-top:6px;"></div>
+              <input type="hidden" id="pfImage">
+            </div>
           </div>
           <div class="form-actions">
             <button class="btn btn-secondary" id="productFormCancelBtn" style="background:var(--bg); border:1px solid var(--hairline); color:var(--ink); flex:1;">বাতিল</button>
@@ -390,7 +467,24 @@
   </div>
 </section>
 
-<div class="footer">© 2026 ProyojonBD — সকল অধিকার সংরক্ষিত</div>
+<footer class="footer">
+  <div class="footer-brand">🌿 ProyojonBD</div>
+  <div style="font-size:0.85rem;opacity:0.85;">আপনার দৈনন্দিন প্রয়োজন, এক ক্লিকে</div>
+  <div class="social-links">
+    <a class="social-link" href="https://www.facebook.com" target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+      Facebook
+    </a>
+    <a class="social-link" href="https://www.youtube.com" target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 00-1.95 1.96A29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.4a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58zM10 15.5v-7l6 3.5-6 3.5z"/></svg>
+      YouTube
+    </a>
+  </div>
+  <div class="footer-credit">
+    <strong>@AM Shahed</strong> &nbsp;|&nbsp; 📞 01605721296
+    <br>© 2026 ProyojonBD — সকল অধিকার সংরক্ষিত
+  </div>
+</footer>
 
 <!-- ===================== BUY MODAL ===================== -->
 <div class="modal-scrim" id="buyModalScrim">
@@ -499,8 +593,10 @@ function showToast(msg){
 function money(n){ return Number(n||0).toLocaleString('en-BD') + ' টাকা'; }
 
 async function apiGet(params){
-  const res = await fetch(API_URL + '?' + params);
-  return res.json();
+  const res = await fetch(API_URL + '?' + params, { redirect:'follow' });
+  const text = await res.text();
+  try{ return JSON.parse(text); }
+  catch(e){ throw new Error('JSON parse failed: ' + text.slice(0,100)); }
 }
 async function apiPost(payload){
   const res = await fetch(API_URL, {
@@ -593,11 +689,19 @@ async function loadProducts(){
 }
 
 function productCardHTML(p){
+  const imgs = p.image ? p.image.split(',').map(u=>u.trim()).filter(Boolean) : [];
+  const thumbHtml = imgs.length > 1
+    ? `<div class="img-slider" data-idx="0" data-imgs='${JSON.stringify(imgs)}'>
+        <img src="${imgs[0]}" alt="${p.name}">
+        <div class="slider-dots">${imgs.map((_,i)=>`<span class="dot${i===0?' active':''}" data-i="${i}"></span>`).join('')}</div>
+       </div>`
+    : imgs.length === 1
+      ? `<img src="${imgs[0]}" alt="${p.name}">`
+      : `<span class="placeholder">ছবি নেই</span>`;
+
   return `
     <div class="product-card">
-      <div class="product-thumb">
-        ${p.image ? `<img src="${p.image}" alt="${p.name}">` : `<span class="placeholder">ছবি নেই</span>`}
-      </div>
+      <div class="product-thumb">${thumbHtml}</div>
       <div class="product-body">
         <div class="product-name">${p.name}</div>
         <div class="product-desc">${p.desc || ''}</div>
@@ -616,6 +720,19 @@ function renderProducts(){
   document.getElementById('orderProductGrid').innerHTML = html || `<div class="empty-state">কোনো পণ্য পাওয়া যায়নি</div>`;
   document.querySelectorAll('.buy-btn').forEach(btn=>{
     btn.addEventListener('click', ()=> openBuyModal(btn.dataset.id));
+  });
+  // স্লাইডার ডট ইভেন্ট
+  document.querySelectorAll('.img-slider').forEach(slider=>{
+    slider.querySelectorAll('.dot').forEach(dot=>{
+      dot.addEventListener('click', e=>{
+        e.stopPropagation();
+        const i = parseInt(dot.dataset.i);
+        const imgs = JSON.parse(slider.dataset.imgs);
+        slider.querySelector('img').src = imgs[i];
+        slider.querySelectorAll('.dot').forEach(d=>d.classList.remove('active'));
+        dot.classList.add('active');
+      });
+    });
   });
 }
 
@@ -749,6 +866,8 @@ document.getElementById('confirmPrintBtn').addEventListener('click', ()=>{
       <div class="row total"><span>সর্বমোট</span><span>${order.total} টাকা</span></div>
       <div class="center">ডেলিভারি ঠিকানা: ${order.address}</div>
       <div class="center">ধন্যবাদ ProyojonBD-র সাথে থাকার জন্য</div>
+      <hr>
+      <div class="center" style="font-size:11px;">@AM Shahed &nbsp;|&nbsp; 01605721296</div>
       <script>window.print();<\/script>
     </body></html>
   `);
@@ -777,6 +896,9 @@ function printTableWindow(title, theadHtml, tbodyHtml, tfootHtml){
         <tbody>${tbodyHtml}</tbody>
         ${tfootHtml ? '<tfoot>'+tfootHtml+'</tfoot>' : ''}
       </table>
+      <div style="text-align:center;margin-top:18px;font-size:11px;color:#62716B;border-top:1px dashed #ccc;padding-top:10px;">
+        @AM Shahed &nbsp;|&nbsp; 01605721296 &nbsp;|&nbsp; ProyojonBD
+      </div>
       <script>window.print();<\/script>
     </body></html>
   `);
@@ -837,6 +959,125 @@ document.getElementById('dashboardPrintBtn').addEventListener('click', ()=>{
     `
   );
 });
+
+/* ===================== IMGBB IMAGE UPLOAD ===================== */
+const IMGBB_API_KEY = ""; // imgbb.com থেকে ফ্রি API key নিয়ে এখানে বসান
+
+async function uploadToImgBB(file){
+  const form = new FormData();
+  form.append('image', file);
+  const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method:'POST', body:form });
+  const data = await res.json();
+  if (data.success) return data.data.url;
+  throw new Error('আপলোড ব্যর্থ: ' + (data.error?.message || 'অজানা'));
+}
+
+// প্রতিটা বক্সে ক্লিক → ফাইল ইনপুট ট্রিগার
+function initImageBoxes(){
+  document.querySelectorAll('.img-upload-box').forEach(box=>{
+    const input = box.querySelector('.img-file-input');
+    const removeBtn = box.querySelector('.img-remove-btn');
+    const inner = box.querySelector('.img-box-inner');
+
+    // বক্সে ক্লিক করলে ফাইল ডায়ালগ খুলবে
+    box.addEventListener('click', e=>{
+      if (e.target === removeBtn) return;
+      input.click();
+    });
+
+    // ছবি সিলেক্ট হলে
+    input.addEventListener('change', async function(){
+      const file = this.files[0];
+      if (!file) return;
+      const status = document.getElementById('pfImageStatus');
+
+      // প্রিভিউ দেখানো
+      const reader = new FileReader();
+      reader.onload = e=>{
+        inner.innerHTML = `<img src="${e.target.result}" alt="preview">`;
+        box.classList.add('has-img');
+        removeBtn.style.display = 'flex';
+      };
+      reader.readAsDataURL(file);
+
+      // ImgBB-তে আপলোড
+      if (!IMGBB_API_KEY){
+        status.style.color = '#B3261E';
+        status.textContent = '⚠️ IMGBB_API_KEY সেট করুন — api.imgbb.com থেকে ফ্রি key নিন।';
+        updateImageHiddenField();
+        return;
+      }
+      status.style.color = 'var(--ink-soft)';
+      status.textContent = '⏳ ছবি আপলোড হচ্ছে…';
+      try{
+        const url = await uploadToImgBB(file);
+        box.dataset.url = url;
+        updateImageHiddenField();
+        status.style.color = 'var(--teal-deep)';
+        status.textContent = '✅ ছবি আপলোড সম্পন্ন!';
+      }catch(err){
+        status.style.color = '#B3261E';
+        status.textContent = '❌ ' + err.message;
+      }
+    });
+
+    // ✕ বাটনে ক্লিক → ছবি সরিয়ে দেওয়া
+    removeBtn.addEventListener('click', e=>{
+      e.stopPropagation();
+      const slot = box.dataset.slot;
+      input.value = '';
+      delete box.dataset.url;
+      box.classList.remove('has-img');
+      removeBtn.style.display = 'none';
+      inner.innerHTML = `
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="3"/>
+          <path d="M3 15l5-5 4 4 3-3 6 6"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+        </svg>
+        <span>ছবি ${parseInt(slot)+1}</span>`;
+      updateImageHiddenField();
+    });
+  });
+}
+
+function updateImageHiddenField(){
+  const urls = [];
+  document.querySelectorAll('.img-upload-box').forEach(box=>{
+    if (box.dataset.url) urls.push(box.dataset.url);
+  });
+  document.getElementById('pfImage').value = urls.join(',');
+}
+
+function resetImageBoxes(existingUrls){
+  document.querySelectorAll('.img-upload-box').forEach((box, i)=>{
+    const input = box.querySelector('.img-file-input');
+    const removeBtn = box.querySelector('.img-remove-btn');
+    const inner = box.querySelector('.img-box-inner');
+    input.value = '';
+    box.classList.remove('has-img');
+    removeBtn.style.display = 'none';
+    const url = existingUrls && existingUrls[i] ? existingUrls[i].trim() : null;
+    if (url){
+      inner.innerHTML = `<img src="${url}" alt="ছবি ${i+1}">`;
+      box.classList.add('has-img');
+      box.dataset.url = url;
+      removeBtn.style.display = 'flex';
+    } else {
+      delete box.dataset.url;
+      inner.innerHTML = `
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="3"/>
+          <path d="M3 15l5-5 4 4 3-3 6 6"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+        </svg>
+        <span>ছবি ${i+1}</span>`;
+    }
+  });
+  updateImageHiddenField();
+  const status = document.getElementById('pfImageStatus');
+  if (status) status.textContent = '';
+}
 
 /* ===================== PRODUCTS ADMIN ===================== */
 let _allProductsAdmin = [];
@@ -913,6 +1154,8 @@ function openProductForm(id){
     document.getElementById('pfStock').value = p.stock || '';
     document.getElementById('pfDesc').value = p.desc || '';
     document.getElementById('pfImage').value = p.image || '';
+    const existingUrls = p.image ? p.image.split(',') : [];
+    resetImageBoxes(existingUrls);
   } else {
     document.getElementById('productFormTitle').textContent = 'নতুন পণ্য';
     document.getElementById('productEditId').value = '';
@@ -921,6 +1164,7 @@ function openProductForm(id){
     document.getElementById('pfStock').value = '';
     document.getElementById('pfDesc').value = '';
     document.getElementById('pfImage').value = '';
+    resetImageBoxes([]);
   }
   card.scrollIntoView({behavior:'smooth', block:'center'});
 }
@@ -1155,6 +1399,7 @@ document.getElementById('expensePrintBtn').addEventListener('click', ()=>{
 
 /* ---------- শুরু ---------- */
 loadProducts();
+initImageBoxes();
 </script>
 </body>
 </html>
