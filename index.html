@@ -94,10 +94,22 @@
     line-height:1;
   }
   .img-remove-btn:hover{ background:var(--danger); }
-  .img-slider img{ width:100%; height:100%; object-fit:cover; }
-  .slider-dots{ position:absolute; bottom:6px; left:50%; transform:translateX(-50%); display:flex; gap:5px; }
-  .dot{ width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,0.6); cursor:pointer; border:1px solid rgba(0,0,0,0.15); }
-  .dot.active{ background:var(--white); }
+  .img-slider{ position:relative; width:100%; height:100%; overflow:hidden; }
+  .img-slider-track{ display:flex; height:100%; transition:transform 0.3s ease; will-change:transform; }
+  .img-slider-track img{ min-width:100%; width:100%; height:100%; object-fit:cover; flex:none; }
+  .slider-arrow{
+    position:absolute; top:50%; transform:translateY(-50%);
+    background:rgba(0,0,0,0.45); color:#fff; border:none;
+    width:28px; height:28px; border-radius:50%; font-size:1rem;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; z-index:3;
+  }
+  .slider-arrow:hover{ background:rgba(0,0,0,0.72); }
+  .slider-arrow.prev{ left:5px; }
+  .slider-arrow.next{ right:5px; }
+  .slider-dots{ position:absolute; bottom:6px; left:50%; transform:translateX(-50%); display:flex; gap:5px; z-index:3; }
+  .dot{ width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,0.55); cursor:pointer; border:1px solid rgba(0,0,0,0.15); transition:background 0.2s; }
+  .dot.active{ background:#fff; }
   .product-body{ padding:13px 14px 15px; display:flex; flex-direction:column; gap:5px; flex:1; }
   .product-name{ font-weight:700; font-size:1rem; line-height:1.35; }
   .product-desc{ font-size:0.84rem; color:var(--ink-soft); line-height:1.4; flex:1; }
@@ -159,7 +171,18 @@
   table.data-table td{ padding:10px 12px; border-top:1px solid var(--hairline); text-align:right; white-space:nowrap; }
   table.data-table tr:hover td{ background:var(--bg); }
   table.data-table tfoot td{ font-weight:700; background:var(--mint); border-top:2px solid var(--teal); }
-  .status-pill{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.76rem; font-weight:700; }
+  .price-box{ display:flex; flex-wrap:wrap; align-items:center; gap:4px; }
+  .price-original{ font-family:var(--font-mono); font-size:0.82rem; color:var(--ink-soft); text-decoration:line-through; }
+  .price-final{ font-family:var(--font-mono); font-weight:700; font-size:1.05rem; color:var(--teal-deep); }
+  .price-badge{ background:#FFF1DC; color:#9A5B00; font-size:0.72rem; font-weight:700; padding:2px 7px; border-radius:999px; }
+  .see-more-btn, .see-less-btn{ background:none; border:none; color:var(--teal); font-size:0.82rem; font-weight:600; cursor:pointer; padding:0; }
+  .status-select{
+    border:none; border-radius:6px; padding:4px 8px; font-size:0.8rem; font-weight:700; cursor:pointer;
+    font-family:inherit;
+  }
+  .status-select.pending{ background:#FFF1DC; color:#9A5B00; }
+  .status-select.delivery{ background:var(--mint); color:var(--teal-deep); }
+  .status-select.cancel{ background:#FBE3E1; color:var(--danger); } display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.76rem; font-weight:700; }
   .status-pill.pending{ background:#FFF1DC; color:var(--gold); }
   .status-pill.delivery{ background:var(--mint); color:var(--teal-deep); }
   .status-pill.cancel{ background:#FBE3E1; color:var(--danger); }
@@ -236,7 +259,7 @@
   .toast.show{ opacity:1; visibility:visible; transform:translateX(-50%) translateY(0); }
 
   .footer{
-    background:#0A5743; color:var(--white);
+    background:var(--forest); color:var(--white);
     padding:28px 20px 18px; text-align:center;
     border-top:3px solid var(--mint);
   }
@@ -272,7 +295,6 @@
     <nav class="navbar" id="navbar">
       <button class="nav-btn active" data-section="home">Home</button>
       <button class="nav-btn" data-section="about">About Us</button>
-      <button class="nav-btn" data-section="order">Order</button>
       <button class="nav-btn" data-section="report">Report</button>
     </nav>
   </div>
@@ -306,13 +328,9 @@
   </div>
 </section>
 
-<!-- ===================== ORDER ===================== -->
-<section class="section" id="section-order">
-  <div class="page">
-    <h2 class="section-title">অর্ডার করুন</h2>
-    <p class="order-intro">যে পণ্যটি অর্ডার করতে চান, তার নিচে Buy Now বাটনে ক্লিক করুন। ডেলিভারি চার্জ চেকআউটে যুক্ত হবে।</p>
-    <div class="product-grid" id="orderProductGrid"></div>
-  </div>
+<!-- ORDER section hidden — Home পেজেই Buy Now আছে -->
+<section class="section" id="section-order" style="display:none!important">
+  <div class="product-grid" id="orderProductGrid"></div>
 </section>
 
 <!-- ===================== REPORT (Admin, PIN gated) ===================== -->
@@ -367,7 +385,8 @@
           <input type="hidden" id="productEditId">
           <div class="form-grid">
             <div class="field full"><label>পণ্যের নাম</label><input type="text" id="pfName"></div>
-            <div class="field"><label>দাম (টাকা)</label><input type="number" id="pfPrice" min="0"></div>
+            <div class="field"><label>মূল দাম (টাকা)</label><input type="number" id="pfPrice" min="0"></div>
+            <div class="field"><label>ছাড়মূল্য (টাকা, না থাকলে খালি)</label><input type="number" id="pfDiscount" min="0" placeholder="0"></div>
             <div class="field"><label>স্টক</label><input type="number" id="pfStock" min="0"></div>
             <div class="field full"><label>সংক্ষিপ্ত বিবরণ</label><textarea id="pfDesc" rows="2"></textarea></div>
             <div class="field full">
@@ -471,7 +490,7 @@
   <div class="footer-brand">🌿 ProyojonBD</div>
   <div style="font-size:0.85rem;opacity:0.85;">আপনার দৈনন্দিন প্রয়োজন, এক ক্লিকে</div>
   <div class="social-links">
-    <a class="social-link" href="https://web.facebook.com/abdul.momen.111408/" target="_blank" rel="noopener">
+    <a class="social-link" href="https://www.facebook.com" target="_blank" rel="noopener">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
       Facebook
     </a>
@@ -690,27 +709,62 @@ async function loadProducts(){
 
 function productCardHTML(p){
   const imgs = p.image ? p.image.split(',').map(u=>u.trim()).filter(Boolean) : [];
-  const thumbHtml = imgs.length > 1
-    ? `<div class="img-slider" data-idx="0" data-imgs='${JSON.stringify(imgs)}'>
-        <img src="${imgs[0]}" alt="${p.name}">
-        <div class="slider-dots">${imgs.map((_,i)=>`<span class="dot${i===0?' active':''}" data-i="${i}"></span>`).join('')}</div>
+  let thumbHtml;
+  if (imgs.length > 1){
+    const trackImgs = imgs.map(u=>`<img src="${u}" alt="${p.name}">`).join('');
+    const dots = imgs.map((_,i)=>`<span class="dot${i===0?' active':''}" data-i="${i}"></span>`).join('');
+    thumbHtml = `
+      <div class="img-slider" data-idx="0" data-total="${imgs.length}">
+        <div class="img-slider-track">${trackImgs}</div>
+        <button class="slider-arrow prev" type="button">&#8249;</button>
+        <button class="slider-arrow next" type="button">&#8250;</button>
+        <div class="slider-dots">${dots}</div>
+      </div>`;
+  } else if (imgs.length === 1){
+    thumbHtml = `<img src="${imgs[0]}" alt="${p.name}">`;
+  } else {
+    thumbHtml = `<span class="placeholder">ছবি নেই</span>`;
+  }
+
+  const hasDiscount = p.discount && Number(p.discount) > 0;
+  const finalPrice = hasDiscount ? Number(p.price) - Number(p.discount) : Number(p.price);
+  const priceHtml = hasDiscount
+    ? `<div class="price-box">
+         <span class="price-original">${money(p.price)}</span>
+         <span class="price-final">${money(finalPrice)}</span>
+         <span class="price-badge">-${money(p.discount)} ছাড়</span>
        </div>`
-    : imgs.length === 1
-      ? `<img src="${imgs[0]}" alt="${p.name}">`
-      : `<span class="placeholder">ছবি নেই</span>`;
+    : `<span class="product-price">${money(finalPrice)}</span>`;
+
+  const desc = p.desc || '';
+  const descHtml = desc.length > 80
+    ? `<div class="product-desc">
+         <span class="desc-short">${desc.slice(0,80)}&hellip; <button class="see-more-btn" type="button">see more</button></span>
+         <span class="desc-full" style="display:none">${desc} <button class="see-less-btn" type="button">see less</button></span>
+       </div>`
+    : `<div class="product-desc">${desc}</div>`;
 
   return `
     <div class="product-card">
       <div class="product-thumb">${thumbHtml}</div>
       <div class="product-body">
         <div class="product-name">${p.name}</div>
-        <div class="product-desc">${p.desc || ''}</div>
+        ${descHtml}
         <div class="product-footer">
-          <span class="product-price">${money(p.price)}</span>
-          <button class="buy-btn" data-id="${p.id}">Buy Now</button>
+          ${priceHtml}
+          <button class="buy-btn" data-id="${p.id}" data-price="${finalPrice}">Buy Now</button>
         </div>
       </div>
     </div>`;
+}
+
+function goSlide(slider, dir){
+  const total = parseInt(slider.dataset.total);
+  let idx = parseInt(slider.dataset.idx);
+  idx = (idx + dir + total) % total;
+  slider.dataset.idx = idx;
+  slider.querySelector('.img-slider-track').style.transform = `translateX(-${idx * 100}%)`;
+  slider.querySelectorAll('.dot').forEach((d,i)=> d.classList.toggle('active', i===idx));
 }
 
 function renderProducts(){
@@ -718,19 +772,28 @@ function renderProducts(){
   const html = activeOnly.map(productCardHTML).join('');
   document.getElementById('homeProductGrid').innerHTML = html || `<div class="empty-state">কোনো পণ্য পাওয়া যায়নি</div>`;
   document.getElementById('orderProductGrid').innerHTML = html || `<div class="empty-state">কোনো পণ্য পাওয়া যায়নি</div>`;
+
   document.querySelectorAll('.buy-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=> openBuyModal(btn.dataset.id));
+    btn.addEventListener('click', ()=> openBuyModal(btn.dataset.id, Number(btn.dataset.price)));
   });
-  // স্লাইডার ডট ইভেন্ট
+  document.querySelectorAll('.see-more-btn').forEach(btn=>{
+    btn.addEventListener('click', e=>{ e.stopPropagation(); const d=btn.closest('.product-desc'); d.querySelector('.desc-short').style.display='none'; d.querySelector('.desc-full').style.display=''; });
+  });
+  document.querySelectorAll('.see-less-btn').forEach(btn=>{
+    btn.addEventListener('click', e=>{ e.stopPropagation(); const d=btn.closest('.product-desc'); d.querySelector('.desc-full').style.display='none'; d.querySelector('.desc-short').style.display=''; });
+  });
+
+  // স্লাইডার অ্যারো ও ডট ইভেন্ট
   document.querySelectorAll('.img-slider').forEach(slider=>{
+    slider.querySelector('.prev')?.addEventListener('click', e=>{ e.stopPropagation(); goSlide(slider,-1); });
+    slider.querySelector('.next')?.addEventListener('click', e=>{ e.stopPropagation(); goSlide(slider, 1); });
     slider.querySelectorAll('.dot').forEach(dot=>{
       dot.addEventListener('click', e=>{
         e.stopPropagation();
         const i = parseInt(dot.dataset.i);
-        const imgs = JSON.parse(slider.dataset.imgs);
-        slider.querySelector('img').src = imgs[i];
-        slider.querySelectorAll('.dot').forEach(d=>d.classList.remove('active'));
-        dot.classList.add('active');
+        slider.dataset.idx = i;
+        slider.querySelector('.img-slider-track').style.transform = `translateX(-${i*100}%)`;
+        slider.querySelectorAll('.dot').forEach((d,j)=>d.classList.toggle('active', j===i));
       });
     });
   });
@@ -739,9 +802,10 @@ function renderProducts(){
 /* ---------- Buy Now মোডাল ---------- */
 const buyModalScrim = document.getElementById('buyModalScrim');
 
-function openBuyModal(id){
+function openBuyModal(id, finalPrice){
   currentProduct = PRODUCTS.find(p=>String(p.id)===String(id));
   if (!currentProduct) return;
+  currentProduct._finalPrice = finalPrice || currentProduct.price;
   currentQty = 1;
   document.querySelector('input[name="deliveryArea"][value="Inside Feni"]').checked = true;
 
@@ -762,7 +826,7 @@ function getSelectedDeliveryArea(){
 
 function updateModalTotal(){
   document.getElementById('qtyValue').textContent = currentQty;
-  const subtotal = currentProduct.price * currentQty;
+  const subtotal = currentProduct._finalPrice * currentQty;
   const deliveryCharge = DELIVERY_CHARGES[getSelectedDeliveryArea()];
   document.getElementById('modalSubtotal').textContent = money(subtotal);
   document.getElementById('modalDelivery').textContent = money(deliveryCharge);
@@ -794,7 +858,7 @@ document.getElementById('confirmBuyBtn').addEventListener('click', async ()=>{
   const addressOk = validateField('addressField', address);
   if (!nameOk || !phoneOk || !addressOk) return;
 
-  const subtotal = currentProduct.price * currentQty;
+  const subtotal = currentProduct._finalPrice * currentQty;
   const deliveryArea = getSelectedDeliveryArea();
   const deliveryCharge = DELIVERY_CHARGES[deliveryArea];
   const total = subtotal + deliveryCharge;
@@ -803,7 +867,7 @@ document.getElementById('confirmBuyBtn').addEventListener('click', async ()=>{
     customerName:name, phone, address,
     productName: currentProduct.name,
     quantity: currentQty,
-    unitPrice: currentProduct.price,
+    unitPrice: currentProduct._finalPrice,
     subtotal, deliveryArea, deliveryCharge, total
   };
 
@@ -1151,6 +1215,7 @@ function openProductForm(id){
     document.getElementById('productEditId').value = p.id;
     document.getElementById('pfName').value = p.name || '';
     document.getElementById('pfPrice').value = p.price || '';
+    document.getElementById('pfDiscount').value = p.discount || '';
     document.getElementById('pfStock').value = p.stock || '';
     document.getElementById('pfDesc').value = p.desc || '';
     document.getElementById('pfImage').value = p.image || '';
@@ -1161,6 +1226,7 @@ function openProductForm(id){
     document.getElementById('productEditId').value = '';
     document.getElementById('pfName').value = '';
     document.getElementById('pfPrice').value = '';
+    document.getElementById('pfDiscount').value = '';
     document.getElementById('pfStock').value = '';
     document.getElementById('pfDesc').value = '';
     document.getElementById('pfImage').value = '';
@@ -1178,6 +1244,7 @@ document.getElementById('productFormSaveBtn').addEventListener('click', async ()
   const product = {
     id: id || undefined,
     name, price: Number(price),
+    discount: Number(document.getElementById('pfDiscount').value) || 0,
     stock: document.getElementById('pfStock').value,
     desc: document.getElementById('pfDesc').value,
     image: document.getElementById('pfImage').value
@@ -1253,7 +1320,7 @@ function renderOrdersTable(){
 
   wrap.innerHTML = `
     <table class="data-table">
-      <thead><tr><th>অর্ডার আইডি</th><th>তারিখ</th><th>কাস্টমার</th><th>মোবাইল</th><th>পণ্য</th><th>পরিমাণ</th><th>ডেলিভারি এলাকা</th><th>ঠিকানা</th><th>সাবটোটাল</th><th>ডেলিভারি চার্জ</th><th>মোট</th><th>স্ট্যাটাস</th></tr></thead>
+      <thead><tr><th>অর্ডার আইডি</th><th>তারিখ</th><th>কাস্টমার</th><th>মোবাইল</th><th>পণ্য</th><th>পরিমাণ</th><th>এলাকা</th><th>ঠিকানা</th><th>সাবটোটাল</th><th>ডেলিভারি</th><th>মোট</th><th>স্ট্যাটাস</th></tr></thead>
       <tbody>
         ${_currentOrdersList.map(o=>`
           <tr>
@@ -1263,15 +1330,38 @@ function renderOrdersTable(){
             <td>${o.phone||''}</td>
             <td>${o.productName||''}</td>
             <td>${o.quantity||''}</td>
-            <td>${o.deliveryArea === 'Outside Feni' ? 'ফেনীর বাইরে' : 'ফেনীর ভেতরে'}</td>
+            <td>${o.deliveryArea==='Outside Feni'?'ফেনীর বাইরে':'ফেনীর ভেতরে'}</td>
             <td>${o.address||''}</td>
             <td>${money(o.subtotal)}</td>
             <td>${money(o.deliveryCharge)}</td>
             <td>${money(o.total)}</td>
-            <td><span class="status-pill ${statusPillClass(o.status)}">${o.status||'Pending'}</span></td>
+            <td>
+              <select class="status-select ${statusPillClass(o.status)}" data-orderid="${o.orderId}">
+                <option value="Pending"  ${o.status==='Pending' ?'selected':''}>⏳ Pending</option>
+                <option value="Delivery" ${o.status==='Delivery'?'selected':''}>✅ Delivery</option>
+                <option value="Cancel"   ${o.status==='Cancel'  ?'selected':''}>❌ Cancel</option>
+              </select>
+            </td>
           </tr>`).join('')}
       </tbody>
     </table>`;
+
+  wrap.querySelectorAll('.status-select').forEach(sel=>{
+    sel.addEventListener('change', async function(){
+      const orderId = this.dataset.orderid;
+      const newStatus = this.value;
+      this.className = 'status-select ' + statusPillClass(newStatus);
+      this.disabled = true;
+      try{
+        await apiPost({ action:'updateOrderStatus', orderId, status:newStatus });
+        showToast('স্ট্যাটাস আপডেট হয়েছে → ' + newStatus);
+        await loadOrdersReport();
+      }catch(err){
+        showToast('আপডেট করা যায়নি');
+        this.disabled = false;
+      }
+    });
+  });
 }
 
 document.getElementById('ordersPrintBtn').addEventListener('click', ()=>{
