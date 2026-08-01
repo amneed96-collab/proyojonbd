@@ -259,9 +259,8 @@
   .toast.show{ opacity:1; visibility:visible; transform:translateX(-50%) translateY(0); }
 
   .footer{
-    background:var(--forest); color:var(--white);
+    background:var(--teal); color:var(--white);
     padding:28px 20px 18px; text-align:center;
-    border-top:3px solid var(--mint);
   }
   .footer-brand{ font-family:var(--font-display); font-weight:700; font-size:1.1rem; margin-bottom:6px; }
   .social-links{ display:flex; justify-content:center; gap:14px; margin:14px 0; }
@@ -590,10 +589,10 @@ const DELIVERY_CHARGES = { "Inside Feni": 60, "Outside Feni": 150 }; // টা�
 const ADMIN_PIN = "1234"; // ⚠️ এটা বদলে নিন। এটা real security না, শুধু সাধারণ visitor আটকানোর জন্য।
 
 const SAMPLE_PRODUCTS = [
-  { id:"1", name:"নারিকেল তেল ২০০ml", desc:"১০০% খাঁটি প্রাকৃতিক নারিকেল তেল", price:250, image:"", status:"Active" },
-  { id:"2", name:"অর্গানিক মধু ৫০০gm", desc:"সরাসরি বাগান থেকে সংগ্রহ করা খাঁটি মধু", price:480, image:"", status:"Active" },
-  { id:"3", name:"হাতে বানানো সাবান", desc:"প্রাকৃতিক উপাদানে তৈরি, ত্বকের জন্য নিরাপদ", price:120, image:"", status:"Active" },
-  { id:"4", name:"হিমালয়ান লবণ ১kg", desc:"খনিজ সমৃদ্ধ গোলাপি লবণ", price:180, image:"", status:"Active" },
+  { id:"1", name:"নারিকেল তেল ২০০ml",  desc:"১০০% খাঁটি প্রাকৃতিক নারিকেল তেল", price:250, discount:30,  image:"", status:"Active" },
+  { id:"2", name:"অর্গানিক মধু ৫০০gm", desc:"সরাসরি বাগান থেকে সংগ্রহ করা খাঁটি মধু", price:480, discount:0,   image:"", status:"Active" },
+  { id:"3", name:"হাতে বানানো সাবান",   desc:"প্রাকৃতিক উপাদানে তৈরি, ত্বকের জন্য নিরাপদ", price:120, discount:20,  image:"", status:"Active" },
+  { id:"4", name:"হিমালয়ান লবণ ১kg",   desc:"খনিজ সমৃদ্ধ গোলাপি লবণ", price:180, discount:0,   image:"", status:"Active" },
 ];
 
 let PRODUCTS = [];
@@ -699,7 +698,10 @@ async function loadProducts(){
   }
   try{
     const data = await apiGet('action=products');
-    PRODUCTS = data.products || [];
+    PRODUCTS = (data.products || []).map(p=>({
+      ...p,
+      discount: parseFloat(p.discount) || 0
+    }));
   }catch(err){
     showToast("শীট থেকে পণ্য আনা যায়নি — নমুনা পণ্য দেখানো হচ্ছে");
     PRODUCTS = SAMPLE_PRODUCTS;
@@ -726,13 +728,14 @@ function productCardHTML(p){
     thumbHtml = `<span class="placeholder">ছবি নেই</span>`;
   }
 
-  const hasDiscount = p.discount && Number(p.discount) > 0;
-  const finalPrice = hasDiscount ? Number(p.price) - Number(p.discount) : Number(p.price);
+  const discountAmt = parseFloat(p.discount) || 0;
+  const hasDiscount = discountAmt > 0;
+  const finalPrice = hasDiscount ? Number(p.price) - discountAmt : Number(p.price);
   const priceHtml = hasDiscount
     ? `<div class="price-box">
          <span class="price-original">${money(p.price)}</span>
          <span class="price-final">${money(finalPrice)}</span>
-         <span class="price-badge">-${money(p.discount)} ছাড়</span>
+         <span class="price-badge">-${money(discountAmt)} ছাড়</span>
        </div>`
     : `<span class="product-price">${money(finalPrice)}</span>`;
 
