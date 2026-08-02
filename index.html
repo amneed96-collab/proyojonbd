@@ -3,32 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>ProyojonBD — অনলাইনে অর্ডার করুন</title>
-
-<meta name="title" content="ProyojonBD — অনলাইনে অর্ডার করুন">
-<meta name="description" content="ProyojonBD - হার্ডওয়্যার, ইলেকট্রিক্যাল ও অন্যান্য পণ্য অনলাইনে অর্ডার করুন। দ্রুত ডেলিভারি ও সহজ অর্ডার ব্যবস্থা।">
-<meta name="keywords" content="ProyojonBD, প্রয়োজনবিডি, Hardware Shop, Online Order, Bangladesh">
-<meta name="author" content="ProyojonBD">
-<meta name="robots" content="index,follow">
-
-<link rel="canonical" href="https://amneed96-collab.github.io/proyojonbd/">
-
-<meta property="og:type" content="website">
-<meta property="og:title" content="ProyojonBD">
-<meta property="og:description" content="অনলাইনে অর্ডার করুন">
-<meta property="og:url" content="https://amneed96-collab.github.io/proyojonbd/">
-<meta property="og:site_name" content="ProyojonBD">
-
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="ProyojonBD">
-<meta name="twitter:description" content="অনলাইনে অর্ডার করুন">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-
 <style>
   :root{
     --teal:#0E6E55;
@@ -193,7 +171,26 @@
   table.data-table td{ padding:10px 12px; border-top:1px solid var(--hairline); text-align:right; white-space:nowrap; }
   table.data-table tr:hover td{ background:var(--bg); }
   table.data-table tfoot td{ font-weight:700; background:var(--mint); border-top:2px solid var(--teal); }
-  .price-box{ display:flex; flex-direction:column; gap:2px; }
+  .filter-bar{
+    display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap;
+  }
+  .search-wrap{
+    display:flex; align-items:center; gap:8px;
+    background:var(--white); border:1px solid var(--hairline);
+    border-radius:8px; padding:9px 12px; flex:1; min-width:200px;
+  }
+  .search-wrap svg{ flex:none; color:var(--ink-soft); }
+  .search-wrap input{
+    border:none; outline:none; width:100%; font-family:inherit;
+    font-size:0.92rem; background:transparent; color:var(--ink);
+  }
+  .search-wrap input::placeholder{ color:var(--ink-soft); }
+  #categoryFilter{
+    background:var(--white); border:1px solid var(--hairline);
+    border-radius:8px; padding:9px 12px; font-family:inherit;
+    font-size:0.88rem; color:var(--ink); cursor:pointer; min-width:160px;
+  }
+  #categoryFilter:focus{ border-color:var(--teal); outline:none; }
   .price-original{ font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-soft); text-decoration:line-through; }
   .price-final{ font-family:var(--font-mono); font-weight:700; font-size:1.05rem; color:var(--teal-deep); }
   .price-badge{ background:#FFF1DC; color:#9A5B00; font-size:0.68rem; font-weight:700; padding:2px 6px; border-radius:999px; display:inline-block; width:fit-content; }
@@ -300,9 +297,6 @@
     border-top:1px solid rgba(255,255,255,0.15);
   }
   .footer-credit strong{ color:var(--white); }
-  .heading{
-    display: none;
-  }
 </style>
 </head>
 <body>
@@ -327,12 +321,28 @@
 <!-- ===================== HOME ===================== -->
 <section class="section active" id="section-home">
   <div class="hero">
-    <h1 class="heading">ProyojonBD</h1> 
     <h1>ProyojonBD — আপনার দৈনন্দিন প্রয়োজন, এক ক্লিকে</h1>
     <p>পছন্দের পণ্য বেছে নিন, Buy Now চাপুন, ক্যাশ অন ডেলিভারিতে অর্ডার করুন</p>
   </div>
   <div class="page">
-    <h2 class="section-title">আমাদের পণ্য তালিকা</h2>
+    <div class="filter-bar">
+      <div class="search-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="productSearch" placeholder="পণ্যের নাম লিখে সার্চ করুন…">
+      </div>
+      <select id="categoryFilter">
+        <option value="">সব ক্যাটাগরি</option>
+        <option value="Natural">Natural</option>
+        <option value="Computer">Computer</option>
+        <option value="Hardware">Hardware</option>
+        <option value="Mobile">Mobile</option>
+        <option value="Software">Software</option>
+        <option value="Website">Website</option>
+        <option value="Electronic">Electronic</option>
+        <option value="Others">Others</option>
+      </select>
+    </div>
+    <div id="productCount" style="font-size:0.85rem;color:var(--ink-soft);margin-bottom:12px;"></div>
     <div class="product-grid" id="homeProductGrid"></div>
   </div>
 </section>
@@ -410,6 +420,18 @@
           <input type="hidden" id="productEditId">
           <div class="form-grid">
             <div class="field full"><label>পণ্যের নাম</label><input type="text" id="pfName"></div>
+            <div class="field"><label>ক্যাটাগরি</label>
+              <select id="pfCategory">
+                <option value="Natural">Natural</option>
+                <option value="Computer">Computer</option>
+                <option value="Hardware">Hardware</option>
+                <option value="Mobile">Mobile</option>
+                <option value="Software">Software</option>
+                <option value="Website">Website</option>
+                <option value="Electronic">Electronic</option>
+                <option value="Others" selected>Others</option>
+              </select>
+            </div>
             <div class="field"><label>মূল দাম (টাকা)</label><input type="number" id="pfPrice" min="0"></div>
             <div class="field"><label>ছাড়মূল্য (টাকা, না থাকলে খালি)</label><input type="number" id="pfDiscount" min="0" placeholder="0"></div>
             <div class="field"><label>স্টক</label><input type="number" id="pfStock" min="0"></div>
@@ -524,12 +546,10 @@
       YouTube
     </a>
   </div>
-<div class="footer-credit">
-    <strong>ProyojonBD</strong><br>
-    Developed by <strong>AM Shahed</strong><br>
-    📞 01605721296<br>
-    © 2026 ProyojonBD. All Rights Reserved.
-</div>
+  <div class="footer-credit">
+    <strong>@AM Shahed</strong> &nbsp;|&nbsp; 📞 01605721296
+    <br>© 2026 ProyojonBD — সকল অধিকার সংরক্ষিত
+  </div>
 </footer>
 
 <!-- ===================== BUY MODAL ===================== -->
@@ -799,10 +819,25 @@ function goSlide(slider, dir){
 }
 
 function renderProducts(){
-  const activeOnly = PRODUCTS.filter(p => (p.status || 'Active') !== 'Inactive');
+  const search = (document.getElementById('productSearch')?.value || '').trim().toLowerCase();
+  const cat    = document.getElementById('categoryFilter')?.value || '';
+
+  const activeOnly = PRODUCTS.filter(p => {
+    if ((p.status || 'Active') === 'Inactive') return false;
+    if (cat && p.category !== cat) return false;
+    if (search && !p.name.toLowerCase().includes(search) &&
+        !(p.desc||'').toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  const countEl = document.getElementById('productCount');
+  if (countEl) countEl.textContent = activeOnly.length
+    ? `${activeOnly.length}টি পণ্য পাওয়া গেছে`
+    : '';
+
   const html = activeOnly.map(productCardHTML).join('');
-  document.getElementById('homeProductGrid').innerHTML = html || `<div class="empty-state">কোনো পণ্য পাওয়া যায়নি</div>`;
-  document.getElementById('orderProductGrid').innerHTML = html || `<div class="empty-state">কোনো পণ্য পাওয়া যায়নি</div>`;
+  document.getElementById('homeProductGrid').innerHTML  = html || `<div class="empty-state" style="grid-column:1/-1">কোনো পণ্য পাওয়া যায়নি</div>`;
+  document.getElementById('orderProductGrid').innerHTML = html;
 
   document.querySelectorAll('.buy-btn').forEach(btn=>{
     btn.addEventListener('click', ()=> openBuyModal(btn.dataset.id, Number(btn.dataset.price)));
@@ -813,8 +848,6 @@ function renderProducts(){
   document.querySelectorAll('.see-less-btn').forEach(btn=>{
     btn.addEventListener('click', e=>{ e.stopPropagation(); const d=btn.closest('.product-desc'); d.querySelector('.desc-full').style.display='none'; d.querySelector('.desc-short').style.display=''; });
   });
-
-  // স্লাইডার অ্যারো ও ডট ইভেন্ট
   document.querySelectorAll('.img-slider').forEach(slider=>{
     slider.querySelector('.prev')?.addEventListener('click', e=>{ e.stopPropagation(); goSlide(slider,-1); });
     slider.querySelector('.next')?.addEventListener('click', e=>{ e.stopPropagation(); goSlide(slider, 1); });
@@ -829,6 +862,10 @@ function renderProducts(){
     });
   });
 }
+
+// Search ও Category filter event
+document.getElementById('productSearch')?.addEventListener('input', renderProducts);
+document.getElementById('categoryFilter')?.addEventListener('change', renderProducts);
 
 /* ---------- Buy Now মোডাল ---------- */
 const buyModalScrim = document.getElementById('buyModalScrim');
@@ -897,6 +934,7 @@ document.getElementById('confirmBuyBtn').addEventListener('click', async ()=>{
   const order = {
     customerName:name, phone, address,
     productName: currentProduct.name,
+    category: currentProduct.category || '',
     quantity: currentQty,
     unitPrice: currentProduct._finalPrice,
     subtotal, deliveryArea, deliveryCharge, total
@@ -1245,6 +1283,7 @@ function openProductForm(id){
     document.getElementById('productFormTitle').textContent = 'পণ্য এডিট করুন';
     document.getElementById('productEditId').value = p.id;
     document.getElementById('pfName').value = p.name || '';
+    document.getElementById('pfCategory').value = p.category || 'Others';
     document.getElementById('pfPrice').value = p.price || '';
     document.getElementById('pfDiscount').value = p.discount || '';
     document.getElementById('pfStock').value = p.stock || '';
@@ -1256,6 +1295,7 @@ function openProductForm(id){
     document.getElementById('productFormTitle').textContent = 'নতুন পণ্য';
     document.getElementById('productEditId').value = '';
     document.getElementById('pfName').value = '';
+    document.getElementById('pfCategory').value = 'Others';
     document.getElementById('pfPrice').value = '';
     document.getElementById('pfDiscount').value = '';
     document.getElementById('pfStock').value = '';
@@ -1274,7 +1314,9 @@ document.getElementById('productFormSaveBtn').addEventListener('click', async ()
 
   const product = {
     id: id || undefined,
-    name, price: Number(price),
+    name,
+    category: document.getElementById('pfCategory').value || 'Others',
+    price: Number(price),
     discount: Number(document.getElementById('pfDiscount').value) || 0,
     stock: document.getElementById('pfStock').value,
     desc: document.getElementById('pfDesc').value,
@@ -1521,22 +1563,6 @@ document.getElementById('expensePrintBtn').addEventListener('click', ()=>{
 /* ---------- শুরু ---------- */
 loadProducts();
 initImageBoxes();
-</script>
-
-<script type="application/ld+json">
-{
- "@context":"https://schema.org",
- "@type":"SoftwareApplication",
- "name":"ProyojonBD",
- "applicationCategory":"BusinessApplication",
- "operatingSystem":"Web",
- "url":"https://amneed96-collab.github.io/proyojonbd/",
- "description":"Hardware Shop Management System",
- "author":{
-   "@type":"Person",
-   "name":"Abdul Momen"
- }
-}
 </script>
 </body>
 </html>
