@@ -1,9 +1,7 @@
 /**
- * ProyojonBD — Apps Script Backend (v5)
- * শীট ও হেডার অটো তৈরি হবে — আলাদাভাবে কিছু করতে হবে না।
+ * ProyojonBD — Apps Script Backend (v6)
+ * শীট ও হেডার অটো তৈরি হবে। আগের শীটে নতুন কলাম missing থাকলে অটো যুক্ত হবে।
  */
-
-/* ======== SHEET & HEADER AUTO-SETUP ======== */
 
 var SHEET_SCHEMAS = {
   'Products': ['id','name','category','desc','price','discount','stock','image','status'],
@@ -11,27 +9,53 @@ var SHEET_SCHEMAS = {
   'Expenses': ['expenseId','timestamp','category','description','amount']
 };
 
+/* ======== SHEET AUTO-SETUP ======== */
+
 function ensureSheet(name) {
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(name);
+  var schema = SHEET_SCHEMAS[name];
+
   if (!sheet) {
+    // শীট নেই — নতুন তৈরি করা
     sheet = ss.insertSheet(name);
-    sheet.appendRow(SHEET_SCHEMAS[name]);
-    sheet.getRange(1, 1, 1, SHEET_SCHEMAS[name].length)
-         .setFontWeight('bold')
-         .setBackground('#0E6E55')
-         .setFontColor('#FFFFFF');
-  } else {
-    // হেডার না থাকলে বা ভুল থাকলে ঠিক করা
-    var firstRow = sheet.getRange(1, 1, 1, SHEET_SCHEMAS[name].length).getValues()[0];
-    if (!firstRow[0] || String(firstRow[0]).trim() === '') {
-      sheet.insertRowBefore(1);
-      sheet.getRange(1, 1, 1, SHEET_SCHEMAS[name].length).setValues([SHEET_SCHEMAS[name]]);
-      sheet.getRange(1, 1, 1, SHEET_SCHEMAS[name].length)
-           .setFontWeight('bold').setBackground('#0E6E55').setFontColor('#FFFFFF');
-    }
+    sheet.appendRow(schema);
+    styleHeader(sheet, schema.length);
+    return sheet;
   }
+
+  // শীট আছে — হেডার চেক করা
+  var lastCol = sheet.getLastColumn();
+  var existingHeaders = lastCol > 0
+    ? sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function(h){ return String(h).trim().toLowerCase(); })
+    : [];
+
+  if (existingHeaders.length === 0 || !existingHeaders[0]) {
+    // হেডার একদম নেই
+    sheet.insertRowBefore(1);
+    sheet.getRange(1, 1, 1, schema.length).setValues([schema]);
+    styleHeader(sheet, schema.length);
+    return sheet;
+  }
+
+  // Missing কলাম খুঁজে যুক্ত করা
+  schema.forEach(function(col) {
+    var lc = col.toLowerCase();
+    if (existingHeaders.indexOf(lc) === -1) {
+      var newCol = sheet.getLastColumn() + 1;
+      sheet.getRange(1, newCol).setValue(col);
+      sheet.getRange(1, newCol).setFontWeight('bold').setBackground('#0E6E55').setFontColor('#FFFFFF');
+    }
+  });
+
   return sheet;
+}
+
+function styleHeader(sheet, colCount) {
+  sheet.getRange(1, 1, 1, colCount)
+       .setFontWeight('bold')
+       .setBackground('#0E6E55')
+       .setFontColor('#FFFFFF');
 }
 
 function ensureAllSheets() {
@@ -41,8 +65,11 @@ function ensureAllSheets() {
 /* ======== UTILITIES ======== */
 
 function getHeaders(sheet) {
-  var vals = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  return vals.map(function(h){ return String(h).trim().toLowerCase().replace(/\s+/g,''); });
+  var lastCol = sheet.getLastColumn();
+  if (lastCol === 0) return [];
+  return sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function(h){
+    return String(h).trim().toLowerCase().replace(/\s+/g,'');
+  });
 }
 
 function rowsToObjects(rows) {
@@ -52,7 +79,7 @@ function rowsToObjects(rows) {
   for (var i = 1; i < rows.length; i++) {
     var row = rows[i];
     if (!row[0] && !row[1]) continue;
-    var obj = { _row: i + 1 };
+    var obj = { _row: i+1 };
     headers.forEach(function(h, idx){ obj[h] = row[idx]; });
     out.push(obj);
   }
@@ -61,7 +88,9 @@ function rowsToObjects(rows) {
 
 function buildRow(headers, map) {
   var row = new Array(headers.length).fill('');
-  headers.forEach(function(h, i){ if (map.hasOwnProperty(h)) row[i] = map[h]; });
+  headers.forEach(function(h, i){
+    if (map.hasOwnProperty(h)) row[i] = map[h];
+  });
   return row;
 }
 
@@ -107,7 +136,7 @@ function getProducts() {
         discount: Number(o.discount) || 0,
         stock:    (o.stock===''||o.stock===undefined) ? null : Number(o.stock),
         image:    o.image      || '',
-        status:   o.status     ? String(o.status).trim() : 'Active'
+        status:   o.status ? String(o.status).trim() : 'Active'
       };
     })
   };
@@ -129,7 +158,7 @@ function addProduct(p) {
     'image':    p.image    || '',
     'status':   'Active'
   }));
-  return { success: true, id: id };
+  return { success:true, id:id };
 }
 
 function updateProduct(p) {
@@ -140,7 +169,7 @@ function updateProduct(p) {
   var idCol   = headers.indexOf('id');
   for (var i = 1; i < rows.length; i++) {
     if (String(rows[i][idCol]) !== String(p.id)) continue;
-    var r   = i + 1;
+    var r = i + 1;
     var set = function(col, val){
       if (val === undefined) return;
       var c = headers.indexOf(col);
@@ -152,9 +181,9 @@ function updateProduct(p) {
     if (p.price    !== undefined) set('price',    Number(p.price));
     if (p.discount !== undefined) set('discount', Number(p.discount));
     if (p.stock    !== undefined) set('stock',    p.stock==='' ? '' : Number(p.stock));
-    set('image',    p.image);
-    set('status',   p.status);
-    return { success: true };
+    set('image',  p.image);
+    set('status', p.status);
+    return { success:true };
   }
   return { error: 'পণ্য পাওয়া যায়নি' };
 }
@@ -171,20 +200,20 @@ function getOrders(status) {
     })
     .map(function(o){
       return {
-        orderId:       o.orderid,
-        timestamp:     o.timestamp,
-        customerName:  o.customername,
-        phone:         o.phone,
-        productName:   o.productname,
-        category:      o.category || '',
-        deliveryArea:  o.deliveryarea,
-        address:       o.address,
-        quantity:      o.quantity,
-        unitPrice:     o.unitprice,
-        subtotal:      o.subtotal,
+        orderId:        o.orderid,
+        timestamp:      o.timestamp,
+        customerName:   o.customername,
+        phone:          o.phone,
+        productName:    o.productname,
+        category:       o.category || '',
+        deliveryArea:   o.deliveryarea,
+        address:        o.address,
+        quantity:       o.quantity,
+        unitPrice:      o.unitprice,
+        subtotal:       o.subtotal,
         deliveryCharge: o.deliverycharge,
-        total:         o.total,
-        status:        (o.status||'Pending').toString().trim()
+        total:          o.total,
+        status:         (o.status||'Pending').toString().trim()
       };
     });
   return { orders: orders.reverse() };
@@ -231,11 +260,11 @@ function updateOrderStatus(orderId, status) {
   var headers = rows[0].map(function(h){ return String(h).trim().toLowerCase().replace(/\s+/g,''); });
   var idCol   = headers.indexOf('orderid');
   var stCol   = headers.indexOf('status');
-  if (idCol < 0 || stCol < 0) return { error: 'কলাম পাওয়া যায়নি' };
+  if (idCol<0||stCol<0) return { error: 'কলাম পাওয়া যায়নি' };
   for (var i = 1; i < rows.length; i++) {
     if (String(rows[i][idCol]) === String(orderId)) {
       sheet.getRange(i+1, stCol+1).setValue(status);
-      return { success: true };
+      return { success:true };
     }
   }
   return { error: 'অর্ডার পাওয়া যায়নি' };
@@ -269,7 +298,6 @@ function addExpense(exp) {
   return { success:true, expenseId:id };
 }
 
-/* ======== JSON ======== */
 function jsonResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
