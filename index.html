@@ -64,9 +64,9 @@
   .section.active{ display:block; }
   .page{ max-width:1150px; margin:0 auto; padding:32px 20px 70px; }
 
-  .hero{ background:#F5FAFA; padding:40px 20px; text-align:center; border-bottom:3px solid var(--accent); }
-  .hero h1{ font-size:1.9rem; margin:0 0 8px; font-weight:700; }
-  .hero p{ margin:0; opacity:0.92; font-size:1rem; }
+  .hero{ background:#F5FAFA; padding:32px 20px; text-align:center; border-bottom:1px solid var(--hairline); }
+  .hero h1{ font-size:1.9rem; margin:0 0 8px; font-weight:700; color:var(--ink); }
+  .hero p{ margin:0; font-size:1rem; color:var(--ink-soft); }
   @media (min-width:600px){ .hero h1{ font-size:2.3rem; } }
 
   .section-title{ font-size:1.3rem; font-weight:700; margin:0 0 18px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -181,7 +181,31 @@
   table.data-table td{ padding:10px 12px; border-top:1px solid var(--hairline); text-align:right; white-space:nowrap; }
   table.data-table tr:hover td{ background:var(--bg); }
   table.data-table tfoot td{ font-weight:700; background:var(--chip); border-top:2px solid var(--teal); }
-  .filter-bar{
+  .header-right{ display:flex; align-items:center; gap:8px; }
+  .header-search-wrap{ position:relative; display:flex; align-items:center; }
+  .header-search-icon{
+    background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2);
+    color:var(--white); border-radius:8px; width:36px; height:36px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .header-search-icon:hover{ background:rgba(255,255,255,0.22); }
+  .header-search-box{
+    position:absolute; right:0; top:44px;
+    background:var(--white); border:1px solid var(--hairline);
+    border-radius:10px; padding:8px 12px;
+    display:flex; align-items:center; gap:8px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.12);
+    min-width:260px; z-index:100;
+  }
+  .header-search-box input{
+    border:none; outline:none; font-family:inherit; font-size:0.92rem;
+    color:var(--ink); background:transparent; flex:1;
+  }
+  .header-search-close{
+    background:none; border:none; color:var(--ink-soft); cursor:pointer;
+    font-size:0.9rem; padding:2px 4px; border-radius:4px;
+  }
+  .header-search-close:hover{ background:var(--chip); }
     display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap;
   }
   .search-wrap{
@@ -317,9 +341,20 @@
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 13C4 7 9 3 18 3C18 12 14 19 4 20C4 17 4 15 4 13Z" fill="#74D6B8"/><path d="M4 20C6 14 9 10 17 5" stroke="#0F1322" stroke-width="1.3" stroke-linecap="round"/></svg>
       ProyojonBD
     </div>
-    <button class="hamburger" id="hamburgerBtn" aria-label="মেনু খুলুন">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-    </button>
+    <div class="header-right">
+      <div class="header-search-wrap" id="headerSearchWrap">
+        <button class="header-search-icon" id="headerSearchIcon" aria-label="সার্চ">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        </button>
+        <div class="header-search-box" id="headerSearchBox" style="display:none;">
+          <input type="text" id="productSearch" placeholder="পণ্য সার্চ করুন…" autocomplete="off">
+          <button class="header-search-close" id="headerSearchClose" aria-label="বন্ধ করুন">✕</button>
+        </div>
+      </div>
+      <button class="hamburger" id="hamburgerBtn" aria-label="মেনু খুলুন">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
     <nav class="navbar" id="navbar">
       <button class="nav-btn active" data-section="home">Home</button>
       <button class="nav-btn" data-section="about">About Us</button>
@@ -336,10 +371,6 @@
   </div>
   <div class="page">
     <div class="filter-bar">
-      <div class="search-wrap">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-        <input type="text" id="productSearch" placeholder="পণ্যের নাম লিখে সার্চ করুন…">
-      </div>
       <select id="categoryFilter">
         <option value="">সব ক্যাটাগরি</option>
         <option value="Natural">Natural</option>
@@ -644,7 +675,7 @@
    ========================================================= */
 const API_URL = "https://script.google.com/macros/s/AKfycbzhR_FwZNlFls6uB0a5FsnVt3yW5_Wt0Q2T8zzkPCLqjBWB0Y4K7QVAjcTYaX8DWvGO/exec"; // আপনার Apps Script Web App URL এখানে বসান
 const DELIVERY_CHARGES = { "Inside Feni": 60, "Outside Feni": 150 }; // টাকা — প্রয়োজনে বদলে নিন
-const ADMIN_PIN = "Am1296"; // ⚠️ এটা বদলে নিন। এটা real security না, শুধু সাধারণ visitor আটকানোর জন্য।
+const ADMIN_PIN = "11296"; // ⚠️ এটা বদলে নিন। এটা real security না, শুধু সাধারণ visitor আটকানোর জন্য।
 
 const SAMPLE_PRODUCTS = [
   { id:"1", name:"নারিকেল তেল ২০০ml",  category:"Natural",    desc:"১০০% খাঁটি প্রাকৃতিক নারিকেল তেল", price:250, discount:30, image:"", status:"Active" },
@@ -732,6 +763,11 @@ document.getElementById('gatePinInput').addEventListener('keydown', (e)=>{
 });
 document.getElementById('lockAdminBtn').addEventListener('click', ()=>{
   localStorage.removeItem('proyojonbd_admin_unlocked');
+  // Home-এ চলে যাওয়া
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.nav-btn[data-section="home"]').classList.add('active');
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('section-home').classList.add('active');
   checkAdminGate();
 });
 
@@ -878,8 +914,35 @@ function renderProducts(){
   });
 }
 
+// Header search toggle
+const headerSearchIcon = document.getElementById('headerSearchIcon');
+const headerSearchBox  = document.getElementById('headerSearchBox');
+const headerSearchClose= document.getElementById('headerSearchClose');
+const productSearchInput = document.getElementById('productSearch');
+
+headerSearchIcon.addEventListener('click', ()=>{
+  headerSearchBox.style.display = 'flex';
+  productSearchInput.focus();
+});
+headerSearchClose.addEventListener('click', ()=>{
+  headerSearchBox.style.display = 'none';
+  productSearchInput.value = '';
+  renderProducts();
+});
+productSearchInput.addEventListener('input', ()=>{
+  renderProducts();
+  if (!productSearchInput.value) {
+    headerSearchBox.style.display = 'none';
+  }
+});
+// outside click-এ close
+document.addEventListener('click', (e)=>{
+  if (!document.getElementById('headerSearchWrap').contains(e.target)){
+    headerSearchBox.style.display = 'none';
+  }
+});
+
 // Search ও Category filter event
-document.getElementById('productSearch')?.addEventListener('input', renderProducts);
 document.getElementById('categoryFilter')?.addEventListener('change', renderProducts);
 
 /* ---------- Buy Now মোডাল ---------- */
@@ -1001,7 +1064,7 @@ document.getElementById('confirmPrintBtn').addEventListener('click', ()=>{
     </style></head>
     <body>
       <h2>ProyojonBD</h2>
-      <div class="tag">অর্ডার স্লিপ</div>
+      <div class="tag">অর্ডার স্লিপ — @AM Shahed | 01605721296</div>
       <div class="row"><span>অর্ডার আইডি</span><span>${result.orderId || ''}</span></div>
       <div class="row"><span>তারিখ</span><span>${date.toLocaleDateString('bn-BD')} ${date.toLocaleTimeString('bn-BD')}</span></div>
       <div class="row"><span>কাস্টমার</span><span>${order.customerName}</span></div>
@@ -1024,29 +1087,50 @@ document.getElementById('confirmPrintBtn').addEventListener('click', ()=>{
 
 /* ---------- জেনেরিক টেবিল প্রিন্ট ---------- */
 function printTableWindow(title, theadHtml, tbodyHtml, tfootHtml){
+  // সংখ্যা কলাম auto-detect করার জন্য col index বের করি
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<table><thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody></table>`, 'text/html');
+  const thCells = Array.from(doc.querySelectorAll('thead th'));
+  // সংখ্যা হেডার keywords
+  const numKeywords = ['পরিমাণ','মোট','সাবটোটাল','ডেলিভারি','চার্জ','টাকা','amount','total','subtotal','price','qty','quantity','charge','discount'];
+  const numCols = new Set();
+  thCells.forEach((th, i) => {
+    const t = th.textContent.toLowerCase();
+    if (numKeywords.some(k => t.includes(k))) numCols.add(i);
+  });
+
+  // col align CSS তৈরি
+  let colAlignCss = '';
+  thCells.forEach((_, i) => {
+    const align = numCols.has(i) ? 'center' : 'left';
+    colAlignCss += `tr td:nth-child(${i+1}), tr th:nth-child(${i+1}){ text-align:${align}; }\n`;
+  });
+
   const win = window.open('', '_blank');
   win.document.write(`
     <html><head><title>${title}</title>
     <style>
-      body{ font-family:'Hind Siliguri', Arial, sans-serif; padding:20px; color:#22302B; }
-      h2{ color:#0F1322; margin-bottom:4px; }
-      .meta{ font-size:12px; color:#62716B; margin-bottom:16px; }
+      body{ font-family:'Hind Siliguri', Arial, sans-serif; padding:20px; color:#1A1F36; }
+      h2{ color:#1A1F36; margin-bottom:2px; text-align:center; }
+      .meta{ font-size:12px; color:#6B7280; margin-bottom:16px; text-align:center; }
       table{ width:100%; border-collapse:collapse; font-size:12px; }
-      th, td{ border:1px solid #ddd; padding:6px 8px; text-align:right; }
-      th{ background:#EFEFEB; color:#0F1322; }
-      tfoot td{ font-weight:bold; background:#F4F8F7; }
+      th, td{ border:1px solid #ddd; padding:6px 8px; }
+      th{ background:#EFEFEB; color:#1A1F36; text-align:center; }
+      td{ text-align:left; }
+      tfoot td{ font-weight:bold; background:#F5F5F0; text-align:center; }
+      ${colAlignCss}
+      .credit{ text-align:center; margin-top:18px; font-size:11px; color:#6B7280; border-top:1px dashed #ccc; padding-top:10px; }
+      @media print{ body{ padding:8px; } }
     </style></head>
     <body>
       <h2>ProyojonBD</h2>
-      <div class="meta">${title} — প্রিন্টের তারিখ: ${new Date().toLocaleDateString('bn-BD')}</div>
+      <div class="meta">${title} — তারিখ: ${new Date().toLocaleDateString('bn-BD')}</div>
       <table>
         <thead>${theadHtml}</thead>
         <tbody>${tbodyHtml}</tbody>
         ${tfootHtml ? '<tfoot>'+tfootHtml+'</tfoot>' : ''}
       </table>
-      <div style="text-align:center;margin-top:18px;font-size:11px;color:#62716B;border-top:1px dashed #ccc;padding-top:10px;">
-        @AM Shahed &nbsp;|&nbsp; 01605721296 &nbsp;|&nbsp; ProyojonBD
-      </div>
+      <div class="credit">@AM Shahed &nbsp;|&nbsp; 01605721296 &nbsp;|&nbsp; ProyojonBD</div>
       <script>window.print();<\/script>
     </body></html>
   `);
@@ -1250,14 +1334,16 @@ function renderProductsAdminTable(){
 
   wrap.innerHTML = `
     <table class="data-table">
-      <thead><tr><th>নাম</th><th>দাম</th><th>স্টক</th><th>স্ট্যাটাস</th><th>অ্যাকশন</th></tr></thead>
+      <thead><tr><th style="text-align:left;">নাম</th><th style="text-align:left;">ক্যাটাগরি</th><th>দাম</th><th>ছাড়</th><th>স্টক</th><th>স্ট্যাটাস</th><th>অ্যাকশন</th></tr></thead>
       <tbody>
         ${_allProductsAdmin.map(p=>`
           <tr>
-            <td>${p.name}</td>
-            <td>${money(p.price)}</td>
-            <td>${p.stock===null||p.stock===''?'-':p.stock}</td>
-            <td><span class="status-pill ${p.status==='Inactive'?'inactive-pill':'active-pill'}">${p.status||'Active'}</span></td>
+            <td style="text-align:left;">${p.name}</td>
+            <td style="text-align:left;">${p.category||'—'}</td>
+            <td style="text-align:center;">${money(p.price)}</td>
+            <td style="text-align:center;">${p.discount>0?money(p.discount):'—'}</td>
+            <td style="text-align:center;">${p.stock===null||p.stock===''?'—':p.stock}</td>
+            <td style="text-align:center;"><span class="status-pill ${p.status==='Inactive'?'inactive-pill':'active-pill'}">${p.status||'Active'}</span></td>
             <td style="white-space:nowrap; display:flex; gap:6px; justify-content:flex-end;">
               <button class="btn btn-outline btn-sm" data-action="edit" data-id="${p.id}">এডিট</button>
               <button class="btn ${p.status==='Inactive'?'btn-outline':'btn-danger-outline'} btn-sm" data-action="toggle" data-id="${p.id}">
