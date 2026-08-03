@@ -44,7 +44,7 @@ function ensureSheet(name) {
     if (existingHeaders.indexOf(lc) === -1) {
       var newCol = sheet.getLastColumn() + 1;
       sheet.getRange(1, newCol).setValue(col);
-      sheet.getRange(1, newCol).setFontWeight('bold').setBackground('#0E6E55').setFontColor('#FFFFFF');
+      sheet.getRange(1, newCol).setFontWeight('bold').setBackground('#1A1F36').setFontColor('#FFFFFF');
     }
   });
 
@@ -54,7 +54,7 @@ function ensureSheet(name) {
 function styleHeader(sheet, colCount) {
   sheet.getRange(1, 1, 1, colCount)
        .setFontWeight('bold')
-       .setBackground('#0E6E55')
+       .setBackground('#1A1F36')
        .setFontColor('#FFFFFF');
 }
 
