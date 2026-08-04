@@ -947,7 +947,8 @@ const productSearchInput = document.getElementById('productSearch');
 // autofill পুরোপুরি বন্ধ করা — page load-এ clear
 window.addEventListener('load', ()=>{
   productSearchInput.value = '';
-  renderProducts();
+  // search clear হওয়ার পর renderProducts আলাদা call না করা —
+  // loadProducts() শেষে নিজেই renderProducts() call করে
 });
 productSearchInput.addEventListener('focus', ()=>{
   if(productSearchInput.value.length > 0 && productSearchInput.value !== '') {
@@ -1757,6 +1758,8 @@ document.querySelectorAll('#reportSubnav button').forEach(btn=>{
 
 // Init
 renderAboutPublic();
+loadProducts();
+initImageBoxes();
 </script>
 </body>
 </html>
