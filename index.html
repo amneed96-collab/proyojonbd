@@ -64,7 +64,7 @@
   .section.active{ display:block; }
   .page{ max-width:1150px; margin:0 auto; padding:32px 20px 70px; }
 
-  .hero{ background:#F5FAFA; padding:32px 20px; text-align:center; border-bottom:1px solid var(--hairline); }
+  .hero{ background:#F5FAFA; padding:32px 20px; text-align:center; border-bottom:2px solid rgba(26,31,54,0.15); }
   .hero h1{ font-size:1.9rem; margin:0 0 8px; font-weight:700; color:var(--ink); }
   .hero p{ margin:0; font-size:1rem; color:var(--ink-soft); }
   @media (min-width:600px){ .hero h1{ font-size:2.3rem; } }
@@ -80,6 +80,16 @@
   .product-thumb{ width:100%; aspect-ratio:1/1; background:#F2F2EE; overflow:hidden; display:flex; align-items:center; justify-content:center; position:relative; }
   .product-thumb img{ width:100%; height:100%; object-fit:cover; }
   .product-thumb .placeholder{ font-size:0.72rem; color:var(--ink-soft); text-align:center; padding:8px; }
+  .thumb-wrap{ position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+  .thumb-wrap > *:first-child{ width:100%; height:100%; object-fit:cover; }
+  .discount-badge{
+    position:absolute; top:6px; left:6px; z-index:4;
+    background:#E8572A; color:#fff;
+    font-size:0.66rem; font-weight:800; letter-spacing:0.02em;
+    padding:3px 7px; border-radius:4px;
+    box-shadow:0 2px 6px rgba(232,87,42,0.4);
+    pointer-events:none;
+  }
   .img-upload-boxes{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
   .img-upload-box{
     position:relative; aspect-ratio:1/1;
@@ -119,12 +129,15 @@
   .slider-dots{ position:absolute; bottom:6px; left:50%; transform:translateX(-50%); display:flex; gap:5px; z-index:3; }
   .dot{ width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,0.55); cursor:pointer; border:1px solid rgba(0,0,0,0.15); transition:background 0.2s; }
   .dot.active{ background:#fff; }
-  .product-body{ padding:9px 10px 11px; display:flex; flex-direction:column; gap:3px; flex:1; }
+  .product-body{ padding:8px 10px 10px; display:flex; flex-direction:column; gap:2px; flex:1; }
   .product-cat-tag{ font-size:0.65rem; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:var(--ink-soft); background:var(--chip); border-radius:3px; padding:1px 5px; display:inline-block; width:fit-content; margin-bottom:2px; }
   .product-name{ font-weight:600; font-size:0.85rem; line-height:1.3; color:var(--ink); }
   .product-desc{ font-size:0.75rem; color:var(--ink-soft); line-height:1.3; flex:1; }
-  .product-footer{ margin-top:6px; display:flex; align-items:flex-end; justify-content:space-between; gap:6px; }
+  .product-footer{ margin-top:4px; display:flex; align-items:flex-end; justify-content:space-between; gap:6px; }
   .product-price{ font-family:var(--font-mono); font-weight:700; font-size:0.9rem; color:var(--primary); }
+  .price-box{ display:flex; flex-direction:column; gap:0px; }
+  .price-original{ font-family:var(--font-mono); font-size:0.72rem; color:var(--ink-soft); text-decoration:line-through; }
+  .price-final{ font-family:var(--font-mono); font-weight:700; font-size:0.9rem; color:var(--primary); }
   .buy-btn{ background:var(--orange); color:var(--white); border:none; border-radius:6px; padding:6px 10px; font-size:0.75rem; font-weight:700; white-space:nowrap; flex:none; }
   .buy-btn:hover{ background:#e85e22; }
 
@@ -853,13 +866,21 @@ function productCardHTML(p){
   const discountAmt = parseFloat(p.discount) || 0;
   const hasDiscount = discountAmt > 0;
   const finalPrice = hasDiscount ? Number(p.price) - discountAmt : Number(p.price);
+
+  // ছাড় badge ছবির কোণে যুক্ত করা
+  if (hasDiscount){
+    thumbHtml = `<div class="thumb-wrap">
+      ${thumbHtml}
+      <span class="discount-badge">-${discountAmt}৳</span>
+    </div>`;
+  }
+
   const priceHtml = hasDiscount
     ? `<div class="price-box">
          <span class="price-original">${money(p.price)}</span>
          <span class="price-final">${money(finalPrice)}</span>
-         <span class="price-badge">-${money(discountAmt)} ছাড়</span>
        </div>`
-    : `<span class="product-price">${money(finalPrice)}</span>`;
+    : `<div class="price-box"><span class="product-price">${money(finalPrice)}</span></div>`;
 
   const desc = p.desc || '';
   const descHtml = desc.length > 80
@@ -1727,23 +1748,51 @@ function renderAboutPublic(){
   `;
 }
 
-function loadAboutEditor(){
-  const data = loadAboutData();
+async function loadAboutEditor(){
+  // প্রথমে localStorage থেকে দেখানো
+  let data = loadAboutData();
+  fillAboutForm(data);
+
+  // তারপর Sheet থেকে fresh data আনা
+  if (API_URL){
+    try{
+      const res = await apiGet('action=about');
+      if (res.about && (res.about.title || res.about.desc)){
+        data = { ...ABOUT_DEFAULT, ...res.about };
+        localStorage.setItem('proyojonbd_about', JSON.stringify(data));
+        fillAboutForm(data);
+        renderAboutPublic();
+      }
+    }catch(e){}
+  }
+}
+
+function fillAboutForm(data){
   document.getElementById('aboutTitle').value   = data.title   || '';
   document.getElementById('aboutDesc').value    = data.desc    || '';
   document.getElementById('aboutPoints').value  = data.points  || '';
   document.getElementById('aboutContact').value = data.contact || '';
 }
 
-document.getElementById('aboutSaveBtn').addEventListener('click', ()=>{
+document.getElementById('aboutSaveBtn').addEventListener('click', async ()=>{
   const data = {
     title:   document.getElementById('aboutTitle').value.trim()   || ABOUT_DEFAULT.title,
     desc:    document.getElementById('aboutDesc').value.trim()    || '',
     points:  document.getElementById('aboutPoints').value.trim()  || '',
     contact: document.getElementById('aboutContact').value.trim() || ''
   };
+  // localStorage-এ সেভ (offline fallback)
   localStorage.setItem('proyojonbd_about', JSON.stringify(data));
   renderAboutPublic();
+
+  // Sheet-এও সেভ করা
+  const btn = document.getElementById('aboutSaveBtn');
+  btn.disabled = true; btn.textContent = 'সেভ হচ্ছে…';
+  try{
+    if (API_URL) await apiPost({ action:'saveAbout', about:data });
+  }catch(e){ /* offline mode */ }
+  btn.disabled = false; btn.textContent = 'সেভ করুন';
+
   const msg = document.getElementById('aboutSaveMsg');
   msg.style.display = 'block';
   setTimeout(()=>{ msg.style.display='none'; }, 2500);

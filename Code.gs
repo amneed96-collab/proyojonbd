@@ -6,7 +6,8 @@
 var SHEET_SCHEMAS = {
   'Products': ['id','name','category','desc','price','discount','stock','image','status'],
   'Orders':   ['orderId','timestamp','customerName','phone','productName','category','deliveryArea','address','quantity','unitPrice','subtotal','deliveryCharge','total','status'],
-  'Expenses': ['expenseId','timestamp','category','description','amount']
+  'Expenses': ['expenseId','timestamp','category','description','amount'],
+  'About':    ['key','value','updatedAt']
 };
 
 /* ======== SHEET AUTO-SETUP ======== */
@@ -102,6 +103,7 @@ function doGet(e) {
   if (action === 'products') return jsonResponse(getProducts());
   if (action === 'orders')   return jsonResponse(getOrders(e.parameter.status));
   if (action === 'expenses') return jsonResponse(getExpenses());
+  if (action === 'about')    return jsonResponse(getAbout());
   return jsonResponse({ error: 'Unknown action' });
 }
 
@@ -116,6 +118,7 @@ function doPost(e) {
     case 'addProduct':        return jsonResponse(addProduct(body.product));
     case 'updateProduct':     return jsonResponse(updateProduct(body.product));
     case 'addExpense':        return jsonResponse(addExpense(body.expense));
+    case 'saveAbout':         return jsonResponse(saveAbout(body.about));
     default:                  return jsonResponse({ error: 'Unknown action' });
   }
 }
@@ -300,4 +303,51 @@ function addExpense(exp) {
 
 function jsonResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ======== ABOUT ======== */
+
+function getAbout() {
+  var sheet = ensureSheet('About');
+  var rows  = sheet.getDataRange().getValues();
+  var data  = { title:'', desc:'', points:'', contact:'' };
+  for (var i = 1; i < rows.length; i++) {
+    var key = String(rows[i][0]).trim();
+    var val = String(rows[i][1]);
+    if (data.hasOwnProperty(key)) data[key] = val;
+  }
+  return { about: data };
+}
+
+function saveAbout(about) {
+  if (!about) return { error: 'about data missing' };
+  var sheet   = ensureSheet('About');
+  var headers = getHeaders(sheet);
+  var keys    = ['title','desc','points','contact'];
+  var ts      = new Date();
+
+  // পুরোনো rows পড়া
+  var rows = sheet.getDataRange().getValues();
+  var existing = {};
+  var rowMap   = {};
+  for (var i = 1; i < rows.length; i++) {
+    var k = String(rows[i][0]).trim();
+    existing[k] = true;
+    rowMap[k]   = i + 1;
+  }
+
+  keys.forEach(function(key) {
+    var val = about[key] || '';
+    if (existing[key]) {
+      // আপডেট করা
+      var r = rowMap[key];
+      sheet.getRange(r, 2).setValue(val);
+      sheet.getRange(r, 3).setValue(ts);
+    } else {
+      // নতুন row যুক্ত করা
+      sheet.appendRow(buildRow(headers, { 'key': key, 'value': val, 'updatedat': ts }));
+    }
+  });
+
+  return { success: true };
 }
