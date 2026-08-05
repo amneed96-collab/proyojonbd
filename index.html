@@ -731,6 +731,7 @@ let currentProduct = null;
 let currentQty = 1;
 let lastOrderSnapshot = null;
 let currentReportStatus = "Pending";
+let _renderVersion = 0; // race condition prevent করার জন্য
 
 const toastEl = document.getElementById('toast');
 function showToast(msg){
@@ -837,15 +838,21 @@ async function loadProducts(){
     PRODUCTS = SAMPLE_PRODUCTS;
     renderProducts();
   }
+  // এই render-এর version নিজের কাছে রেখে দেওয়া
+  _renderVersion++;
+  const myVersion = _renderVersion;
   try{
     const data = await apiGet('action=products');
+    // যদি এর মধ্যে নতুন load call হয়ে থাকে, এই stale result বাতিল করা
+    if (myVersion !== _renderVersion) return;
     const fresh = (data.products || []).map(p=>({...p, discount: parseFloat(p.discount)||0}));
     if (fresh.length){
       PRODUCTS = fresh;
       renderProducts();
     }
   }catch(err){
-    if(!PRODUCTS.length){ PRODUCTS = SAMPLE_PRODUCTS; renderProducts(); }
+    if (myVersion !== _renderVersion) return;
+    if (!PRODUCTS.length){ PRODUCTS = SAMPLE_PRODUCTS; renderProducts(); }
     showToast("শীট থেকে পণ্য আনা যায়নি");
   }
 }
@@ -921,6 +928,9 @@ function goSlide(slider, dir){
 }
 
 function renderProducts(){
+  // PRODUCTS না থাকলে blank render এড়ানো
+  if (!PRODUCTS || !PRODUCTS.length) return;
+
   const search = (document.getElementById('productSearch')?.value || '').trim().toLowerCase();
   const cat    = document.getElementById('categoryFilter')?.value || '';
 
@@ -938,7 +948,9 @@ function renderProducts(){
     : '';
 
   const html = activeOnly.map(productCardHTML).join('');
-  document.getElementById('homeProductGrid').innerHTML  = html || `<div class="empty-state" style="grid-column:1/-1">কোনো পণ্য পাওয়া যায়নি</div>`;
+  const grid = document.getElementById('homeProductGrid');
+  if (!grid) return;
+  grid.innerHTML = html || `<div class="empty-state" style="grid-column:1/-1">কোনো পণ্য পাওয়া যায়নি</div>`;
   // orderProductGrid removed — Home only
 
   document.querySelectorAll('.buy-btn').forEach(btn=>{
@@ -973,9 +985,8 @@ const productSearchInput = document.getElementById('productSearch');
 
 // autofill পুরোপুরি বন্ধ করা — page load-এ clear
 window.addEventListener('load', ()=>{
-  productSearchInput.value = '';
-  // search clear হওয়ার পর renderProducts আলাদা call না করা —
-  // loadProducts() শেষে নিজেই renderProducts() call করে
+  if (productSearchInput) productSearchInput.value = '';
+  // renderProducts এখানে call করা হচ্ছে না — loadProducts() নিজেই করবে
 });
 productSearchInput.addEventListener('focus', ()=>{
   if(productSearchInput.value.length > 0 && productSearchInput.value !== '') {
