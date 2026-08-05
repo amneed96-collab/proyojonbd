@@ -83,7 +83,7 @@
   .thumb-wrap{ position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
   .thumb-wrap > *:first-child{ width:100%; height:100%; object-fit:cover; }
   .discount-badge{
-    position:absolute; top:6px; left:6px; z-index:4;
+    position:absolute; top:6px; right:6px; z-index:4;
     background:#E8572A; color:#fff;
     font-size:0.66rem; font-weight:800; letter-spacing:0.02em;
     padding:3px 7px; border-radius:4px;
@@ -625,8 +625,9 @@
     </a>
   </div>
   <div class="footer-credit">
-    <strong>@AM Shahed</strong> &nbsp;|&nbsp; 📞 01605721296
-    <br>© 2026 ProyojonBD — সকল অধিকার সংরক্ষিত
+<strong>@AM Shahed</strong> &nbsp;|&nbsp; 📞 01605721296<br>
+    📍 ফেনী সদর, ফেনী জেলা, বাংলাদেশ<br>
+    © 2026 ProyojonBD — সকল অধিকার সংরক্ষিত
   </div>
 </footer>
 
@@ -831,17 +832,22 @@ async function loadProducts(){
     renderProducts();
     return;
   }
+  // আগে sample দেখানো — দ্রুত প্রথম paint
+  if (!PRODUCTS.length){
+    PRODUCTS = SAMPLE_PRODUCTS;
+    renderProducts();
+  }
   try{
     const data = await apiGet('action=products');
-    PRODUCTS = (data.products || []).map(p=>({
-      ...p,
-      discount: parseFloat(p.discount) || 0
-    }));
+    const fresh = (data.products || []).map(p=>({...p, discount: parseFloat(p.discount)||0}));
+    if (fresh.length){
+      PRODUCTS = fresh;
+      renderProducts();
+    }
   }catch(err){
-    showToast("শীট থেকে পণ্য আনা যায়নি — নমুনা পণ্য দেখানো হচ্ছে");
-    PRODUCTS = SAMPLE_PRODUCTS;
+    if(!PRODUCTS.length){ PRODUCTS = SAMPLE_PRODUCTS; renderProducts(); }
+    showToast("শীট থেকে পণ্য আনা যায়নি");
   }
-  renderProducts();
 }
 
 function productCardHTML(p){
@@ -933,10 +939,10 @@ function renderProducts(){
 
   const html = activeOnly.map(productCardHTML).join('');
   document.getElementById('homeProductGrid').innerHTML  = html || `<div class="empty-state" style="grid-column:1/-1">কোনো পণ্য পাওয়া যায়নি</div>`;
-  document.getElementById('orderProductGrid').innerHTML = html;
+  // orderProductGrid removed — Home only
 
   document.querySelectorAll('.buy-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=> openBuyModal(btn.dataset.id, Number(btn.dataset.price)));
+    btn.addEventListener('click', (e)=>{ e.stopPropagation(); openBuyModal(btn.dataset.id, Number(btn.dataset.price)); });
   });
   document.querySelectorAll('.see-more-btn').forEach(btn=>{
     btn.addEventListener('click', e=>{ e.stopPropagation(); const d=btn.closest('.product-desc'); d.querySelector('.desc-short').style.display='none'; d.querySelector('.desc-full').style.display=''; });
@@ -993,9 +999,10 @@ productSearchInput.addEventListener('input', ()=>{
     headerSearchBox.style.display = 'none';
   }
 });
-// outside click-এ close
+// outside click-এ search box close — modal open থাকলে skip
 document.addEventListener('click', (e)=>{
-  if (!document.getElementById('headerSearchWrap').contains(e.target)){
+  const wrap = document.getElementById('headerSearchWrap');
+  if (wrap && !wrap.contains(e.target)){
     headerSearchBox.style.display = 'none';
   }
 });
@@ -1121,8 +1128,9 @@ document.getElementById('confirmPrintBtn').addEventListener('click', ()=>{
       .center{ text-align:center; font-size:12px; color:#62716B; margin-top:16px; }
     </style></head>
     <body>
-      <h2>ProyojonBD</h2>
-      <div class="tag">অর্ডার স্লিপ — @AM Shahed | 01605721296</div>
+      <h2 style="text-align:center;margin:0 0 2px;">ProyojonBD</h2>
+      <div class="tag" style="text-align:center;">@AM Shahed | 01605721296</div>
+      <div class="tag" style="text-align:center;">📍 ফেনী সদর, ফেনী জেলা, বাংলাদেশ</div>
       <div class="row"><span>অর্ডার আইডি</span><span>${result.orderId || ''}</span></div>
       <div class="row"><span>তারিখ</span><span>${date.toLocaleDateString('bn-BD')} ${date.toLocaleTimeString('bn-BD')}</span></div>
       <div class="row"><span>কাস্টমার</span><span>${order.customerName}</span></div>
@@ -1188,7 +1196,7 @@ function printTableWindow(title, theadHtml, tbodyHtml, tfootHtml){
         <tbody>${tbodyHtml}</tbody>
         ${tfootHtml ? '<tfoot>'+tfootHtml+'</tfoot>' : ''}
       </table>
-      <div class="credit">@AM Shahed &nbsp;|&nbsp; 01605721296 &nbsp;|&nbsp; ProyojonBD</div>
+      <div class="credit">ProyojonBD &nbsp;|&nbsp; @AM Shahed &nbsp;|&nbsp; 01605721296<br>📍 ফেনী সদর, ফেনী জেলা, বাংলাদেশ</div>
       <script>window.print();<\/script>
     </body></html>
   `);
@@ -1732,8 +1740,18 @@ function loadAboutData(){
   catch(e){ return ABOUT_DEFAULT; }
 }
 
-function renderAboutPublic(){
-  const data = loadAboutData();
+async function renderAboutPublic(){
+  let data = loadAboutData();
+  // Sheet থেকে fresh data আনা (সব device-এ sync হবে)
+  if (API_URL){
+    try{
+      const res = await apiGet('action=about');
+      if (res.about && (res.about.title || res.about.desc)){
+        data = { ...ABOUT_DEFAULT, ...res.about };
+        localStorage.setItem('proyojonbd_about', JSON.stringify(data));
+      }
+    }catch(e){}
+  }
   const points = data.points.split('\n').filter(p=>p.trim());
   document.getElementById('aboutContent').innerHTML = `
     <h2>${data.title}</h2>
