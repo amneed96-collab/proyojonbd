@@ -1048,30 +1048,39 @@ productSearchInput.addEventListener('focus', ()=>{
   }
 });
 
-headerSearchIcon.addEventListener('click', ()=>{
+headerSearchIcon.addEventListener('click', (e)=>{
+  e.stopPropagation();
   productSearchInput.value = '';
   headerSearchBox.style.display = 'flex';
   productSearchInput.focus();
 });
+
 headerSearchClose.addEventListener('click', (e)=>{
   e.stopPropagation();
-  headerSearchBox.style.display = 'none';
   productSearchInput.value = '';
-  // search clear হলে পণ্য দেখানো — কিন্তু re-render না করা যদি PRODUCTS আগেই আছে
-  if (PRODUCTS.length) renderProducts();
+  headerSearchBox.style.display = 'none';
+  renderProducts();
 });
+
 productSearchInput.addEventListener('input', ()=>{
   renderProducts();
-  if (!productSearchInput.value) {
+});
+
+productSearchInput.addEventListener('keydown', (e)=>{
+  if (e.key === 'Escape'){
+    productSearchInput.value = '';
     headerSearchBox.style.display = 'none';
+    renderProducts();
   }
 });
-// outside click-এ search box শুধু hide — কোনো renderProducts নেই
+
+// outside click — box hide ও পণ্য restore
 document.addEventListener('click', (e)=>{
   const wrap = document.getElementById('headerSearchWrap');
   if (wrap && !wrap.contains(e.target) && headerSearchBox.style.display !== 'none'){
+    productSearchInput.value = '';
     headerSearchBox.style.display = 'none';
-    // search value যা ছিল তাই রেখে দেওয়া — পণ্য hide হবে না
+    renderProducts();
   }
 });
 
