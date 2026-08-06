@@ -164,11 +164,40 @@
   .btn-sm{ padding:7px 12px; font-size:0.8rem; border-radius:7px; }
 
   /* ---------- admin gate ---------- */
-  .gate-box{ max-width:380px; margin:60px auto; background:var(--white); border:1px solid var(--hairline); border-radius:14px; padding:30px; text-align:center; }
-  .gate-box h3{ margin-top:0; }
-  .gate-box input{ width:100%; padding:11px 14px; border:1px solid var(--hairline); border-radius:8px; font-size:1.2rem; text-align:center; letter-spacing:0.3em; font-family:var(--font-mono); margin-bottom:12px; background:var(--bg); }
-  .gate-error{ color:var(--danger); font-size:0.84rem; margin-bottom:10px; display:none; }
+  .gate-box{
+    max-width:340px; margin:60px auto;
+    background:#EEEEF0; border-radius:20px; padding:32px 28px;
+    text-align:center;
+    box-shadow:8px 8px 16px rgba(0,0,0,0.1), -8px -8px 16px rgba(255,255,255,0.7);
+  }
+  .gate-box h3{ margin:0 0 6px; font-size:1.25rem; color:var(--ink); }
+  .gate-box .gate-sub{ color:var(--ink-soft); font-size:0.85rem; margin:0 0 24px; }
+  .otp-boxes{ display:flex; justify-content:center; gap:12px; margin-bottom:20px; }
+  .otp-box{
+    width:52px; height:60px;
+    background:#EEEEF0;
+    border:none; border-radius:12px; outline:none;
+    font-size:1.6rem; font-weight:700; text-align:center;
+    color:var(--ink); font-family:var(--font-mono);
+    box-shadow:4px 4px 8px rgba(0,0,0,0.12), -4px -4px 8px rgba(255,255,255,0.75);
+    transition:box-shadow 0.15s ease;
+    cursor:pointer;
+  }
+  .otp-box:focus{
+    box-shadow:inset 3px 3px 6px rgba(0,0,0,0.1), inset -3px -3px 6px rgba(255,255,255,0.6);
+  }
+  .gate-error{ color:var(--danger); font-size:0.84rem; margin-bottom:12px; display:none; }
   .gate-error.show{ display:block; }
+  .gate-verify-btn{
+    width:100%; padding:13px; border:none; border-radius:12px;
+    background:#EEEEF0; color:var(--ink); font-weight:700; font-size:0.95rem;
+    box-shadow:4px 4px 8px rgba(0,0,0,0.12), -4px -4px 8px rgba(255,255,255,0.75);
+    cursor:pointer; letter-spacing:0.03em;
+    transition:box-shadow 0.15s ease;
+  }
+  .gate-verify-btn:active{
+    box-shadow:inset 3px 3px 6px rgba(0,0,0,0.1), inset -3px -3px 6px rgba(255,255,255,0.6);
+  }
 
   /* ---------- report sub-nav ---------- */
   .report-subnav{ display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
@@ -422,11 +451,18 @@
   <div class="page">
 
     <div id="gateView" class="gate-box">
-      <h3>অ্যাডমিন প্রবেশ</h3>
-      <p style="color:var(--ink-soft); font-size:0.88rem; margin-top:0;">এই পেজ দেখার জন্য PIN দিন</p>
-      <input type="password" id="gatePinInput" inputmode="numeric" maxlength="6" placeholder="••••">
+      <h3>Verify PIN</h3>
+      <p class="gate-sub">Enter the 5-digit security code</p>
+      <div class="otp-boxes">
+        <input class="otp-box" type="password" inputmode="numeric" maxlength="1" id="otp0">
+        <input class="otp-box" type="password" inputmode="numeric" maxlength="1" id="otp1">
+        <input class="otp-box" type="password" inputmode="numeric" maxlength="1" id="otp2">
+        <input class="otp-box" type="password" inputmode="numeric" maxlength="1" id="otp3">
+        <input class="otp-box" type="password" inputmode="numeric" maxlength="1" id="otp4">
+      </div>
       <div class="gate-error" id="gateError">ভুল PIN, আবার চেষ্টা করুন</div>
-      <button class="btn btn-teal" id="gateSubmitBtn" style="width:100%;">প্রবেশ করুন</button>
+      <button class="gate-verify-btn" id="gateSubmitBtn">Verify Now</button>
+      <input type="hidden" id="gatePinInput">
     </div>
 
     <div id="adminView" style="display:none;">
@@ -715,17 +751,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbzhR_FwZNlFls6uB0a5FsnV
 const DELIVERY_CHARGES = { "Inside Feni": 60, "Outside Feni": 150 }; // টাকা — প্রয়োজনে বদলে নিন
 const ADMIN_PIN = "11296"; // ⚠️ এটা বদলে নিন। এটা real security না, শুধু সাধারণ visitor আটকানোর জন্য।
 
-const SAMPLE_PRODUCTS = [
-  { id:"1", name:"নারিকেল তেল ২০০ml",  category:"Natural",    desc:"১০০% খাঁটি প্রাকৃতিক নারিকেল তেল", price:250, discount:30, image:"", status:"Active" },
-  { id:"2", name:"অর্গানিক মধু ৫০০gm", category:"Natural",    desc:"সরাসরি বাগান থেকে সংগ্রহ করা খাঁটি মধু", price:480, discount:0,  image:"", status:"Active" },
-  { id:"3", name:"হাতে বানানো সাবান",   category:"Others",     desc:"প্রাকৃতিক উপাদানে তৈরি, ত্বকের জন্য নিরাপদ", price:120, discount:20, image:"", status:"Active" },
-  { id:"4", name:"হিমালয়ান লবণ ১kg",   category:"Natural",    desc:"খনিজ সমৃদ্ধ গোলাপি লবণ", price:180, discount:0,  image:"", status:"Active" },
-  { id:"5", name:"Wireless Mouse",       category:"Computer",   desc:"Ergonomic wireless mouse, 2.4GHz", price:650, discount:50, image:"", status:"Active" },
-  { id:"6", name:"USB-C Hub",            category:"Hardware",   desc:"7-in-1 USB-C hub with HDMI & SD card", price:890, discount:0, image:"", status:"Active" },
-  { id:"7", name:"Screen Protector",     category:"Mobile",     desc:"Tempered glass screen protector", price:180, discount:30, image:"", status:"Active" },
-  { id:"8", name:"LED Desk Lamp",        category:"Electronic", desc:"Eye-care LED lamp, touch control", price:450, discount:0,  image:"", status:"Active" },
-];
-
+const SAMPLE_PRODUCTS = []; // Demo পণ্য বাদ — শীট থেকেই আসবে
 let PRODUCTS = [];
 let currentProduct = null;
 let currentQty = 1;
@@ -786,19 +812,47 @@ function showAdminView(){
   document.getElementById('adminView').style.display = 'block';
   loadDashboard();
 }
+/* ---------- OTP PIN Boxes ---------- */
+(function(){
+  const boxes = [0,1,2,3,4].map(i=>document.getElementById('otp'+i));
+  const hidden = document.getElementById('gatePinInput');
+  if (!boxes[0]) return;
+  function getPin(){ return boxes.map(b=>b.value||'').join(''); }
+  boxes.forEach(function(box,i){
+    box.addEventListener('input', function(){
+      this.value = this.value.replace(/[^0-9]/g,'').slice(-1);
+      hidden.value = getPin();
+      if (this.value && i<4) boxes[i+1].focus();
+    });
+    box.addEventListener('keydown', function(e){
+      if (e.key==='Backspace' && !this.value && i>0){ boxes[i-1].value=''; boxes[i-1].focus(); hidden.value=getPin(); }
+      if (e.key==='Enter') document.getElementById('gateSubmitBtn').click();
+    });
+    box.addEventListener('paste', function(e){
+      e.preventDefault();
+      const txt=(e.clipboardData||window.clipboardData).getData('text').replace(/[^0-9]/g,'');
+      txt.split('').forEach(function(ch,j){ if(boxes[i+j]) boxes[i+j].value=ch; });
+      hidden.value=getPin();
+      boxes[Math.min(i+txt.length,4)].focus();
+    });
+    box.addEventListener('focus', function(){ this.select(); });
+  });
+})();
+
 document.getElementById('gateSubmitBtn').addEventListener('click', ()=>{
   const val = document.getElementById('gatePinInput').value;
   if (val === ADMIN_PIN){
     localStorage.setItem('proyojonbd_admin_unlocked', 'yes');
     document.getElementById('gateError').classList.remove('show');
     document.getElementById('gatePinInput').value = '';
+    [0,1,2,3,4].forEach(i=>{ const b=document.getElementById('otp'+i); if(b) b.value=''; });
     showAdminView();
   } else {
     document.getElementById('gateError').classList.add('show');
+    [0,1,2,3,4].forEach(i=>{ const b=document.getElementById('otp'+i); if(b) b.value=''; });
+    document.getElementById('gatePinInput').value = '';
+    document.getElementById('otp0')?.focus();
   }
-});
-document.getElementById('gatePinInput').addEventListener('keydown', (e)=>{
-  if (e.key === 'Enter') document.getElementById('gateSubmitBtn').click();
 });
 document.getElementById('lockAdminBtn').addEventListener('click', ()=>{
   localStorage.removeItem('proyojonbd_admin_unlocked');
@@ -999,10 +1053,12 @@ headerSearchIcon.addEventListener('click', ()=>{
   headerSearchBox.style.display = 'flex';
   productSearchInput.focus();
 });
-headerSearchClose.addEventListener('click', ()=>{
+headerSearchClose.addEventListener('click', (e)=>{
+  e.stopPropagation();
   headerSearchBox.style.display = 'none';
   productSearchInput.value = '';
-  renderProducts();
+  // search clear হলে পণ্য দেখানো — কিন্তু re-render না করা যদি PRODUCTS আগেই আছে
+  if (PRODUCTS.length) renderProducts();
 });
 productSearchInput.addEventListener('input', ()=>{
   renderProducts();
@@ -1010,11 +1066,12 @@ productSearchInput.addEventListener('input', ()=>{
     headerSearchBox.style.display = 'none';
   }
 });
-// outside click-এ search box close — modal open থাকলে skip
+// outside click-এ search box শুধু hide — কোনো renderProducts নেই
 document.addEventListener('click', (e)=>{
   const wrap = document.getElementById('headerSearchWrap');
-  if (wrap && !wrap.contains(e.target)){
+  if (wrap && !wrap.contains(e.target) && headerSearchBox.style.display !== 'none'){
     headerSearchBox.style.display = 'none';
+    // search value যা ছিল তাই রেখে দেওয়া — পণ্য hide হবে না
   }
 });
 
