@@ -884,29 +884,23 @@ document.querySelectorAll('#reportSubnav button').forEach(btn=>{
 async function loadProducts(){
   if (!API_URL){
     PRODUCTS = SAMPLE_PRODUCTS;
-    renderProducts();
+    if (PRODUCTS.length) renderProducts();
     return;
   }
-  // আগে sample দেখানো — দ্রুত প্রথম paint
-  if (!PRODUCTS.length){
-    PRODUCTS = SAMPLE_PRODUCTS;
-    renderProducts();
-  }
-  // এই render-এর version নিজের কাছে রেখে দেওয়া
   _renderVersion++;
   const myVersion = _renderVersion;
   try{
     const data = await apiGet('action=products');
-    // যদি এর মধ্যে নতুন load call হয়ে থাকে, এই stale result বাতিল করা
     if (myVersion !== _renderVersion) return;
     const fresh = (data.products || []).map(p=>({...p, discount: parseFloat(p.discount)||0}));
     if (fresh.length){
       PRODUCTS = fresh;
+      // search input যা-ই থাকুক clear করে পণ্য দেখানো
+      if (productSearchInput) productSearchInput.value = '';
       renderProducts();
     }
   }catch(err){
     if (myVersion !== _renderVersion) return;
-    if (!PRODUCTS.length){ PRODUCTS = SAMPLE_PRODUCTS; renderProducts(); }
     showToast("শীট থেকে পণ্য আনা যায়নি");
   }
 }
@@ -1040,7 +1034,6 @@ const productSearchInput = document.getElementById('productSearch');
 // autofill পুরোপুরি বন্ধ করা — page load-এ clear
 window.addEventListener('load', ()=>{
   if (productSearchInput) productSearchInput.value = '';
-  // renderProducts এখানে call করা হচ্ছে না — loadProducts() নিজেই করবে
 });
 productSearchInput.addEventListener('focus', ()=>{
   if(productSearchInput.value.length > 0 && productSearchInput.value !== '') {
